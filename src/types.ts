@@ -11,39 +11,52 @@ export enum TokenType {
   EOF /* = 'eof'*/,
 }
 
+export type TxtPos = {
+  line: number;
+  col: number;
+};
+
+export type Position = {  pos: TxtPos; };
+
 export type Identifier = {
   type: TokenType.Identifier;
   value: string;
-};
+} & Position;
 
 export type Quoted = {
   type: TokenType.Quoted;
   value: string;
-};
+} & Position;
+
 export type Variable = {
   type: TokenType.Variable;
   value: string;
-};
+} & Position;
+
 export type Paren = {
   type: TokenType.Paren;
   value: '(' | ')';
-};
+} & Position;
+
 export type Comment = {
   type: TokenType.Comment;
   value: string;
-};
+} & Position;
+
 export type InlineComment = {
   type: TokenType.InlineComment;
   value: string;
-};
+} & Position;
+
 export type Directive = {
   type: TokenType.Directive;
   value: '@skip-format' | string;
-};
+} & Position;
+
 export type EOF = {
   type: TokenType.EOF;
   value: '';
-};
+} & Position;
 
 export type Token =
   | Identifier
@@ -72,26 +85,21 @@ export enum ParserTokenType {
 export type QuotedString = {
   type: ParserTokenType.QuotedString;
   value: string;
-};
+} & Position;
 
 export type UnquotedString = {
   type: ParserTokenType.UnquotedString;
   value: string;
-};
+} & Position;
 
 export type VariableReference = {
   type: ParserTokenType.VariableReference;
   name: string;
-};
+} & Position;
 
 export type Argument = QuotedString | UnquotedString | VariableReference;
 
 export type Parens = '(' | ')';
-
-export type TxtPos = {
-  line: number;
-  col: number;
-};
 
 type WithComments = {
   leadingComments?: string[];
@@ -102,7 +110,7 @@ export type CommandInvocation = {
   type: ParserTokenType.CommandInvocation;
   name: string;
   args: Argument[];
-} & WithComments;
+} & WithComments & Position;
 
 export type ConditionalBlock = {
   type: ParserTokenType.ConditionalBlock;
@@ -110,25 +118,25 @@ export type ConditionalBlock = {
   body: Statement[];
   elseifBlocks: ElseIfBlock[];
   elseBlock?: ElseBlock;
-} & WithComments;
+} & WithComments & Position;
 
 export type ElseIfBlock = {
   type: ParserTokenType.ElseIfBlock;
   condition: Argument[];
   body: Statement[];
-} & WithComments;
+} & WithComments & Position;
 
 export type ElseBlock = {
   type: ParserTokenType.ElseBlock;
   body: Statement[];
-} & WithComments;
+} & WithComments & Position;
 
 export type MacroDefinition = {
   type: ParserTokenType.MacroDefinition;
   name: string;
   params: string[];
   body: Statement[];
-} & WithComments;
+} & WithComments & Position;
 
 export type Statement = CommandInvocation | ConditionalBlock | MacroDefinition;
 

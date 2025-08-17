@@ -48,8 +48,9 @@ export function expectParen(tokens: Token[], val: Parens): void {
 export function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
   const lines = input.split(/\r?\n/);
-
+  let lineNumber = 0;
   for (const line of lines) {
+    lineNumber++;
     const commentIndex = line.indexOf('#');
     const codePart = commentIndex >= 0 ? line.slice(0, commentIndex) : line;
     const commentPart =

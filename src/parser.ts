@@ -1,4 +1,16 @@
 import { consume, expectIdentifier, expectParen, peek } from './tokenizer';
+import type {
+  Argument,
+  CMakeFile,
+  CommandInvocation,
+  ConditionalBlock,
+  ElseBlock,
+  ElseIfBlock,
+  MacroDefinition,
+  ParserState,
+  Statement,
+  Token,
+} from './types';
 import {
   mkCMakeFile,
   mkCommandInvocation,
@@ -10,16 +22,6 @@ import {
   mkUnquotedString,
   mkVariableReference,
   TokenType,
-  type Argument,
-  type CMakeFile,
-  type CommandInvocation,
-  type ConditionalBlock,
-  type ElseBlock,
-  type ElseIfBlock,
-  type MacroDefinition,
-  type ParserState,
-  type Statement,
-  type Token,
 } from './types';
 
 export function parseCMakeFile(
