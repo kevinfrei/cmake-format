@@ -1,0 +1,18 @@
+{
+  "printWidth": 80,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "proseWrap": "always",
+  "tabWidth": 2,
+  "useTabs": false,
+  "bracketSameLine": true,
+  "arrowParens": "always",
+  "organizeImportsSkipDestructiveCodeActions": true,
+  "overrides": [
+    {
+      "files": ".prettierrc",
+      "options": { "parser": "json" }
+    }
+  ],
+  "plugins": ["prettier-plugin-organize-imports"]
+}
