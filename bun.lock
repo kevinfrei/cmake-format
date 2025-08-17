@@ -9,7 +9,6 @@
       "devDependencies": {
         "@freik/workspace": "^0.6.5",
         "@types/bun": "latest",
-        "prettier": "^3.6.2",
         "prettier-plugin-organize-imports": "^4.2.0",
       },
       "peerDependencies": {
