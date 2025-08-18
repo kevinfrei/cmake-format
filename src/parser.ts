@@ -56,7 +56,7 @@ function parseStatement(tokens: Token[], state: ParserState): Statement {
   const leadingComments = collectLeadingComments(tokens, state);
   const next = peek(tokens);
   if (next.type !== TokenType.Identifier) {
-    throw new Error('Expected statement');
+    throw new Error(`Expected statement, got ${next.type} '${next.value}'`);
   }
   let stmt: Statement;
   switch (next.value) {
