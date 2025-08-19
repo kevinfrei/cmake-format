@@ -30,4 +30,14 @@ describe('Pretty Printer', () => {
     expect(output).toContain('@format-off');
     expect(output).toContain('target_link_libraries');
   });
+  
+  test('handles macros and conditionals', () => {
+    const input = loadFile('grammar.cmake');
+    const tokens = tokenize(input);
+    const ast = parseCMakeFile(tokens, input.split('\n'));
+    const output = printCMake(ast).join('\n');
+    expect(output).toContain('macro(my_macro');
+    expect(output).toContain('if(BUILD_TESTS)');
+    expect(output).toContain('endif()');
+  });
 });

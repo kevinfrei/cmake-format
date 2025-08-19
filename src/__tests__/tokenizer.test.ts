@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { tokenize } from '../tokenizer';
+import { consume, peek, tokenize } from '../tokenizer';
 import {
+  mkComment,
   mkDirective,
   mkEOF,
   mkIdentifier,
+  mkInlineComment,
   mkParen,
   mkQuoted,
   mkVariable,
@@ -64,5 +66,29 @@ describe('CMake Tokenizer', () => {
     const input = `add_executable(app main.cpp) # @format-off`;
     const tokens = tokenize(input);
     expect(tokens).toContainEqual(mkDirective('@format-off'));
+  });
+
+  test('token end of stream failure', () => {
+    const tokens = tokenize('');
+    expect(consume(tokens)).toEqual(mkEOF());
+    expect(() => peek(tokens)).toThrow();
+  });
+
+  test('tokenizing comments & directives before code', () => {
+    const input = '# @format-off\n# comment\nif(test)\n# @format-off\nendif()'
+    const tokens = tokenize(input);
+    expect(tokens).toEqual([
+      mkDirective('@format-off'),
+      mkComment('# comment'),
+      mkIdentifier('if'),
+      mkParen('('),
+      mkIdentifier('test'),
+      mkParen(')'),
+      mkDirective('@format-off'),
+      mkIdentifier('endif'),
+      mkParen('('),
+      mkParen(')'),
+      mkEOF()
+    ])
   });
 });
