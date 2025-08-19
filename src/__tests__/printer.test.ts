@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { parseCMakeFile } from '../parser';
 import { printCMake } from '../printer';
-import { tokenize } from '../tokenizer';
+import { MakeTokenStream } from '../tokenizer';
 import { loadFile } from './load-file';
 
 function printFile(filePath: string): string {
   const input = loadFile(filePath);
-  const tokens = tokenize(input);
+  const tokens = MakeTokenStream(input);
   const ast = parseCMakeFile(tokens, input.split('\n'));
   return printCMake(ast).join('\n');
 }

@@ -58,7 +58,7 @@ export type EOF = {
   value: '';
 } & Position;
 
-export type Token =
+export type Tokenized =
   | Identifier
   | Quoted
   | Variable
@@ -248,6 +248,10 @@ export function mkMacroDefinition(
   return { type: ParserTokenType.MacroDefinition, name, params, body };
 }
 
-export function isAnyComment(token: Token): token is Comment {
-  return token.type === TokenType.Comment || token.type === TokenType.InlineComment || token.type === TokenType.Directive;
+export function isAnyComment(token: Tokenized): token is Comment {
+  return (
+    token.type === TokenType.Comment ||
+    token.type === TokenType.InlineComment ||
+    token.type === TokenType.Directive
+  );
 }

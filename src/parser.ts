@@ -1,4 +1,10 @@
-import { consume, expectIdentifier, expectParen, peek } from './tokenizer';
+import {
+  consume,
+  expectIdentifier,
+  expectParen,
+  peek,
+  type TokenStream,
+} from './tokenizer';
 import type {
   Argument,
   CMakeFile,
@@ -9,7 +15,7 @@ import type {
   MacroDefinition,
   ParserState,
   Statement,
-  Token,
+  Tokenized,
 } from './types';
 import {
   isAnyComment,
@@ -27,22 +33,25 @@ import {
 } from './types';
 
 export function parseCMakeFile(
-  tokens: Token[],
+  tokens: TokenStream,
   originalLines: string[],
 ): CMakeFile {
   const state: ParserState = { formatEnabled: true, originalLines };
   const statements: Statement[] = [];
 
-  while (peek(tokens).type !== TokenType.EOF) {
+  while (tokens.peek().type !== TokenType.EOF) {
     statements.push(parseStatement(tokens, state));
   }
   return mkCMakeFile(statements);
 }
 
-function collectLeadingComments(tokens: Token[], state: ParserState): string[] {
+function collectLeadingComments(
+  tokens: TokenStream,
+  state: ParserState,
+): string[] {
   const comments: string[] = [];
-  while (isAnyComment(peek(tokens))) {
-    const comment = consume(tokens).value;
+  while (isAnyComment(tokens.peek())) {
+    const comment = tokens.consume().value;
     comments.push(comment);
 
     if (comment.includes('@format-off')) {
@@ -54,9 +63,9 @@ function collectLeadingComments(tokens: Token[], state: ParserState): string[] {
   return comments;
 }
 
-function parseStatement(tokens: Token[], state: ParserState): Statement {
+function parseStatement(tokens: TokenStream, state: ParserState): Statement {
   const leadingComments = collectLeadingComments(tokens, state);
-  const next = peek(tokens);
+  const next = tokens.peek();
   if (next.type !== TokenType.Identifier) {
     throw new Error(`Expected statement, got ${next.type} '${next.value}'`);
   }
@@ -72,30 +81,33 @@ function parseStatement(tokens: Token[], state: ParserState): Statement {
       stmt = parseCommandInvocation(tokens);
       break;
   }
-  if (peek(tokens).type === TokenType.InlineComment) {
-    stmt.trailingComment = consume(tokens).value;
+  if (tokens.peek().type === TokenType.InlineComment) {
+    stmt.trailingComment = tokens.consume().value;
   }
   return { ...stmt, leadingComments };
 }
 
-function parseCommandInvocation(tokens: Token[]): CommandInvocation {
-  const name = expectIdentifier(tokens);
-  expectParen(tokens, '(');
+function parseCommandInvocation(tokens: TokenStream): CommandInvocation {
+  const name = tokens.expectIdentifier();
+  tokens.expectParen('(');
   const args = parseArguments(tokens);
-  expectParen(tokens, ')');
+  tokens.expectParen(')');
   return mkCommandInvocation(name, args);
 }
 
-function parseArguments(tokens: Token[]): Argument[] {
+function parseArguments(tokens: TokenStream): Argument[] {
   const args: Argument[] = [];
-  while (peek(tokens).type !== TokenType.Paren || peek(tokens).value !== ')') {
+  while (
+    tokens.peek().type !== TokenType.Paren ||
+    tokens.peek().value !== ')'
+  ) {
     args.push(parseArgument(tokens));
   }
   return args;
 }
 
-function parseArgument(tokens: Token[]): Argument {
-  const token = consume(tokens);
+function parseArgument(tokens: TokenStream): Argument {
+  const token = tokens.consume();
   switch (token.type) {
     case TokenType.Quoted:
       return mkQuotedString(token.value);
@@ -109,13 +121,13 @@ function parseArgument(tokens: Token[]): Argument {
 }
 
 function parseConditionalBlock(
-  tokens: Token[],
+  tokens: TokenStream,
   state: ParserState,
 ): ConditionalBlock {
-  expectIdentifier(tokens); // "if"
-  expectParen(tokens, '(');
+  tokens.expectIdentifier(); // "if"
+  tokens.expectParen('(');
   const condition = parseArguments(tokens);
-  expectParen(tokens, ')');
+  tokens.expectParen(')');
 
   const body: Statement[] = [];
   const elseifBlocks: ElseIfBlock[] = [];
@@ -123,7 +135,7 @@ function parseConditionalBlock(
 
   while (true) {
     const leadingComments = collectLeadingComments(tokens, state);
-    const next = peek(tokens);
+    const next = tokens.peek();
     if (next.type !== TokenType.Identifier) break;
 
     switch (next.value) {
@@ -137,9 +149,9 @@ function parseConditionalBlock(
         elseBlock = { ...parseElseBlock(tokens, state), leadingComments };
         break;
       case 'endif':
-        expectIdentifier(tokens); // "endif"
-        expectParen(tokens, '(');
-        expectParen(tokens, ')');
+        tokens.expectIdentifier(); // "endif"
+        tokens.expectParen('(');
+        tokens.expectParen(')');
         return {
           ...mkConditionalBlock(condition, body, elseifBlocks, elseBlock),
           leadingComments,
@@ -152,16 +164,19 @@ function parseConditionalBlock(
   throw new Error('Missing endif()');
 }
 
-function parseElseIfBlock(tokens: Token[], state: ParserState): ElseIfBlock {
-  expectIdentifier(tokens); // "elseif"
-  expectParen(tokens, '(');
+function parseElseIfBlock(
+  tokens: TokenStream,
+  state: ParserState,
+): ElseIfBlock {
+  tokens.expectIdentifier(); // "elseif"
+  tokens.expectParen('(');
   const condition = parseArguments(tokens);
-  expectParen(tokens, ')');
+  tokens.expectParen(')');
 
   const body: Statement[] = [];
   while (
-    peek(tokens).type === TokenType.Identifier &&
-    !['elseif', 'else', 'endif'].includes(peek(tokens).value)
+    tokens.peek().type === TokenType.Identifier &&
+    !['elseif', 'else', 'endif'].includes(tokens.peek().value)
   ) {
     body.push(parseStatement(tokens, state));
   }
@@ -169,15 +184,15 @@ function parseElseIfBlock(tokens: Token[], state: ParserState): ElseIfBlock {
   return mkElseIfBlock(condition, body);
 }
 
-function parseElseBlock(tokens: Token[], state: ParserState): ElseBlock {
-  expectIdentifier(tokens); // "else"
-  expectParen(tokens, '(');
-  expectParen(tokens, ')');
+function parseElseBlock(tokens: TokenStream, state: ParserState): ElseBlock {
+  tokens.expectIdentifier(); // "else"
+  tokens.expectParen('(');
+  tokens.expectParen(')');
 
   const body: Statement[] = [];
   while (
-    peek(tokens).type === TokenType.Identifier &&
-    peek(tokens).value !== 'endif'
+    tokens.peek().type === TokenType.Identifier &&
+    tokens.peek().value !== 'endif'
   ) {
     body.push(parseStatement(tokens, state));
   }
@@ -186,31 +201,31 @@ function parseElseBlock(tokens: Token[], state: ParserState): ElseBlock {
 }
 
 function parseMacroDefinition(
-  tokens: Token[],
+  tokens: TokenStream,
   state: ParserState,
 ): MacroDefinition {
-  expectIdentifier(tokens); // "macro"
-  expectParen(tokens, '(');
-  const name = expectIdentifier(tokens);
+  tokens.expectIdentifier(); // "macro"
+  tokens.expectParen('(');
+  const name = tokens.expectIdentifier();
   const params: string[] = [];
 
-  while (peek(tokens).type === TokenType.Identifier) {
-    params.push(expectIdentifier(tokens));
+  while (tokens.peek().type === TokenType.Identifier) {
+    params.push(tokens.expectIdentifier());
   }
 
-  expectParen(tokens, ')');
+  tokens.expectParen(')');
 
   const body: Statement[] = [];
   while (
-    peek(tokens).type === TokenType.Identifier &&
-    peek(tokens).value !== 'endmacro'
+    tokens.peek().type === TokenType.Identifier &&
+    tokens.peek().value !== 'endmacro'
   ) {
     body.push(parseStatement(tokens, state));
   }
 
-  expectIdentifier(tokens); // "endmacro"
-  expectParen(tokens, '(');
-  expectParen(tokens, ')');
+  tokens.expectIdentifier(); // "endmacro"
+  tokens.expectParen('(');
+  tokens.expectParen(')');
 
   return mkMacroDefinition(name, params, body);
 }
