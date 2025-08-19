@@ -1,14 +1,14 @@
 // Tokenizer types
 
 export enum TokenType {
-  Identifier /* = 'identifier'*/,
-  Quoted /* = 'quoted'*/,
-  Variable /* = 'variable'*/,
-  Paren /* = 'paren'*/,
-  Comment /* = 'comment'*/,
-  InlineComment /* = 'inline_comment'*/,
-  Directive /* = 'directive'*/,
-  EOF /* = 'eof'*/,
+  Identifier, // = 'identifier',
+  Quoted, // = 'quoted',
+  Variable, // = 'variable',
+  Paren, // = 'paren',
+  Comment, // = 'comment',
+  InlineComment, // = 'inline_comment',
+  Directive, // = 'directive',
+  EOF, // = 'eof',
 }
 
 export type TxtPos = {
@@ -71,15 +71,15 @@ export type Token =
 // Parser types
 
 export enum ParserTokenType {
-  QuotedString /* = 'QuotedString'*/,
-  UnquotedString /* = 'UnquotedString'*/,
-  VariableReference /* = 'VariableReference'*/,
-  CommandInvocation /* = 'CommandInvocation'*/,
-  ConditionalBlock /* = 'ConditionalBlock'*/,
-  ElseIfBlock /* = 'ElseIfBlock'*/,
-  ElseBlock /* = 'ElseBlock'*/,
-  MacroDefinition /* = 'MacroDefinition'*/,
-  CMakeFile /* = 'CMakeFile'*/,
+  QuotedString, // = 'QuotedString',
+  UnquotedString, // = 'UnquotedString',
+  VariableReference, // = 'VariableReference',
+  CommandInvocation, // = 'CommandInvocation',
+  ConditionalBlock, // = 'ConditionalBlock',
+  ElseIfBlock, // = 'ElseIfBlock',
+  ElseBlock, // = 'ElseBlock',
+  MacroDefinition, // = 'MacroDefinition',
+  CMakeFile, // = 'CMakeFile',
 }
 
 export type QuotedString = {
