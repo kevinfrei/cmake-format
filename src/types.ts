@@ -68,6 +68,22 @@ export type Tokenized =
   | Directive
   | EOF;
 
+export type TokenStream = {
+  peek: () => Tokenized;
+  consume: () => Tokenized;
+  expect: (type: TokenType, value?: string) => Tokenized;
+  expectIdentifier: () => string;
+  expectParen: (val: Parens) => void;
+  count: () => number;
+};
+
+/*
+export type Token = {
+  type: () => TokenType;
+  value: () => string;
+  pos: () => TxtPos;
+};
+*/
 // Parser types
 
 export enum ParserTokenType {
