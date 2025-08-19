@@ -24,9 +24,27 @@ describe('Parser', () => {
     ).toBe(true);
   });
 
-  test('throws on malformed input', () => {
-    const input = loadFile('malformed.cmake');
+  test('throws on malformed input 1', () => {
+    const input = "add_executable myApp main.cpp  # missing parentheses";
     const tokens = tokenize(input);
-    expect(() => parseCMakeFile(tokens, input.split('\n'))).toThrow();
+    expect(() => parseCMakeFile(tokens, input.split('\n'))).toThrowError(/^Expected .*, got .* 'myApp'$/);
+  });
+
+  test('throws on malformed input 2', () => {
+    const input = "( this is bad # missing parentheses";
+    const tokens = tokenize(input);
+    expect(() => parseCMakeFile(tokens, input.split('\n'))).toThrowError(/^Expected statement, got .* '\('$/);
+  });
+
+  test('throws on malformed input 3', () => {
+    const input = "test(this (is bad # missing parentheses";
+    const tokens = tokenize(input);
+    expect(() => parseCMakeFile(tokens, input.split('\n'))).toThrowError(/^Unexpected token in argument/);
+  });
+
+  test('throws on malformed input 4', () => {
+    const input = "if(TRUE)\n# comment";
+    const tokens = tokenize(input);
+    expect(() => parseCMakeFile(tokens, input.split('\n'))).toThrowError('Missing endif()');
   });
 });
