@@ -4,40 +4,57 @@ import { printCMake } from '../printer';
 import { tokenize } from '../tokenizer';
 import { loadFile } from './load-file';
 
+function printFile(filePath: string): string {
+  const input = loadFile(filePath);
+  const tokens = tokenize(input);
+  const ast = parseCMakeFile(tokens, input.split('\n'));
+  return printCMake(ast).join('\n');
+}
+
 describe('Pretty Printer', () => {
   test('prints basic command', () => {
-    const input = loadFile('simple.cmake');
-    const tokens = tokenize(input);
-    const ast = parseCMakeFile(tokens, input.split('\n'));
-    const output = printCMake(ast).join('\n');
+    const output = printFile('simple.cmake');
     expect(output).toContain('add_executable');
   });
 
   test('preserves comments', () => {
-    const input = loadFile('comments.cmake');
-    const tokens = tokenize(input);
-    const ast = parseCMakeFile(tokens, input.split('\n'));
-    const output = printCMake(ast).join('\n');
-    expect(output).toContain('# Build the app');
+    const output = printFile('comments.cmake');
     expect(output).toContain('# builds main app');
   });
 
   test('respects format directives', () => {
-    const input = loadFile('directives.cmake');
-    const tokens = tokenize(input);
-    const ast = parseCMakeFile(tokens, input.split('\n'));
-    const output = printCMake(ast).join('\n');
+    const output = printFile('directives.cmake');
     expect(output).toContain('@format-off');
     expect(output).toContain('target_link_libraries');
   });
-  
+
   test('handles macros and conditionals', () => {
-    const input = loadFile('grammar.cmake');
-    const tokens = tokenize(input);
-    const ast = parseCMakeFile(tokens, input.split('\n'));
-    const output = printCMake(ast).join('\n');
+    const output = printFile('grammar.cmake');
     expect(output).toContain('macro(my_macro');
     expect(output).toContain('if(BUILD_TESTS)');
     expect(output).toContain('endif()');
+  });
+});
+
+describe('Just printing files', () => {
+  test('read cassette', () => {
+    const output3 = printFile('lotsa-files/cassette.cmake');
+    expect(output3).toBeDefined();
+  });
+  test('read cassette-cpp', () => {
+    const output5 = printFile('lotsa-files/cassette-cpp.cmake');
+    expect(output5).toBeDefined();
+  });
+  test('read cassette-cpp-musicdb', () => {
+    const output1 = printFile('lotsa-files/cassette-cpp-musicdb.cmake');
+    expect(output1).toBeDefined();
+  });
+  test('read cassette-cpp-test', () => {
+    const output4 = printFile('lotsa-files/cassette-cpp-test.cmake');
+    expect(output4).toBeDefined();
+  });
+  test('read cassette-cpp-tools', () => {
+    const output2 = printFile('lotsa-files/cassette-cpp-tools.cmake');
+    expect(output2).toBeDefined();
   });
 });

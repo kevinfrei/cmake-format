@@ -15,6 +15,7 @@ import {
   isAnyComment,
   mkCMakeFile,
   mkCommandInvocation,
+  mkComment,
   mkConditionalBlock,
   mkElseBlock,
   mkElseIfBlock,
@@ -121,23 +122,30 @@ function parseConditionalBlock(
   let elseBlock: ElseBlock | undefined;
 
   while (true) {
+    const leadingComments = collectLeadingComments(tokens, state);
     const next = peek(tokens);
     if (next.type !== TokenType.Identifier) break;
 
     switch (next.value) {
       case 'elseif':
-        elseifBlocks.push(parseElseIfBlock(tokens, state));
+        elseifBlocks.push({
+          ...parseElseIfBlock(tokens, state),
+          leadingComments,
+        });
         break;
       case 'else':
-        elseBlock = parseElseBlock(tokens, state);
+        elseBlock = { ...parseElseBlock(tokens, state), leadingComments };
         break;
       case 'endif':
         expectIdentifier(tokens); // "endif"
         expectParen(tokens, '(');
         expectParen(tokens, ')');
-        return mkConditionalBlock(condition, body, elseifBlocks, elseBlock);
+        return {
+          ...mkConditionalBlock(condition, body, elseifBlocks, elseBlock),
+          leadingComments,
+        };
       default:
-        body.push(parseStatement(tokens, state));
+        body.push({ ...parseStatement(tokens, state), leadingComments });
     }
   }
 
