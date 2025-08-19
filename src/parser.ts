@@ -12,6 +12,7 @@ import type {
   Token,
 } from './types';
 import {
+  isAnyComment,
   mkCMakeFile,
   mkCommandInvocation,
   mkConditionalBlock,
@@ -39,7 +40,7 @@ export function parseCMakeFile(
 
 function collectLeadingComments(tokens: Token[], state: ParserState): string[] {
   const comments: string[] = [];
-  while (peek(tokens).type === TokenType.Comment) {
+  while (isAnyComment(peek(tokens))) {
     const comment = consume(tokens).value;
     comments.push(comment);
 

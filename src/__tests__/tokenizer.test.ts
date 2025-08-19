@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { tokenize } from '../tokenizer';
 import {
+  mkDirective,
   mkEOF,
   mkIdentifier,
   mkParen,
@@ -50,18 +51,18 @@ describe('CMake Tokenizer', () => {
   test('tokenizes inline comment', () => {
     const input = 'add_library(core STATIC core.cpp) # builds core';
     const tokens = tokenize(input);
-    expect(tokens.some((t) => t.type === TokenType.Comment)).toBe(true);
+    expect(tokens.some((t) => t.type === TokenType.InlineComment)).toBe(true);
   });
 
   test('tokenizes directive comment', () => {
     const input = `# @format-off`;
     const tokens = tokenize(input);
-    expect(tokens).toEqual([mkIdentifier('@format-off'), mkEOF()]);
+    expect(tokens).toEqual([mkDirective('@format-off'), mkEOF()]);
   });
 
   test('tokenizes mixed line with code and directive', () => {
     const input = `add_executable(app main.cpp) # @format-off`;
     const tokens = tokenize(input);
-    expect(tokens).toContainEqual(mkIdentifier('@format-off'));
+    expect(tokens).toContainEqual(mkDirective('@format-off'));
   });
 });

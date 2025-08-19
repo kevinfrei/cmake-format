@@ -1,4 +1,5 @@
 import {
+  mkComment,
   mkDirective,
   mkEOF,
   mkIdentifier,
@@ -53,6 +54,18 @@ export function tokenize(input: string): Token[] {
     lineNumber++;
     const commentIndex = line.indexOf('#');
     const codePart = commentIndex >= 0 ? line.slice(0, commentIndex) : line;
+    // Handle stand-alone
+    if (codePart.trim().length === 0 && commentIndex > 0) {
+      const comment = line.slice(commentIndex).trim();
+      if (comment.includes('@format-on')) {
+        tokens.push(mkDirective('@format-on'));
+      } else if (comment.includes('@format-off')) {
+        tokens.push(mkDirective('@format-off'));
+      } else {
+        tokens.push(mkComment(comment));
+      }
+      continue;
+    }
     const commentPart =
       commentIndex >= 0 ? line.slice(commentIndex).trim() : null;
 

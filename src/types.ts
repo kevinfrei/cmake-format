@@ -16,7 +16,7 @@ export type TxtPos = {
   col: number;
 };
 
-export type Position = {  pos: TxtPos; };
+export type Position = { pos: TxtPos };
 
 export type Identifier = {
   type: TokenType.Identifier;
@@ -110,7 +110,8 @@ export type CommandInvocation = {
   type: ParserTokenType.CommandInvocation;
   name: string;
   args: Argument[];
-} & WithComments & Position;
+} & WithComments &
+  Position;
 
 export type ConditionalBlock = {
   type: ParserTokenType.ConditionalBlock;
@@ -118,25 +119,29 @@ export type ConditionalBlock = {
   body: Statement[];
   elseifBlocks: ElseIfBlock[];
   elseBlock?: ElseBlock;
-} & WithComments & Position;
+} & WithComments &
+  Position;
 
 export type ElseIfBlock = {
   type: ParserTokenType.ElseIfBlock;
   condition: Argument[];
   body: Statement[];
-} & WithComments & Position;
+} & WithComments &
+  Position;
 
 export type ElseBlock = {
   type: ParserTokenType.ElseBlock;
   body: Statement[];
-} & WithComments & Position;
+} & WithComments &
+  Position;
 
 export type MacroDefinition = {
   type: ParserTokenType.MacroDefinition;
   name: string;
   params: string[];
   body: Statement[];
-} & WithComments & Position;
+} & WithComments &
+  Position;
 
 export type Statement = CommandInvocation | ConditionalBlock | MacroDefinition;
 
@@ -176,6 +181,10 @@ export function mkDirective(value: string): Directive {
 
 export function mkInlineComment(value: string): InlineComment {
   return { type: TokenType.InlineComment, value };
+}
+
+export function mkComment(value: string): Comment {
+  return { type: TokenType.Comment, value };
 }
 
 export function mkEOF(): EOF {
@@ -237,4 +246,8 @@ export function mkMacroDefinition(
   body: Statement[],
 ): MacroDefinition {
   return { type: ParserTokenType.MacroDefinition, name, params, body };
+}
+
+export function isAnyComment(token: Token): token is Comment {
+  return token.type === TokenType.Comment || token.type === TokenType.InlineComment || token.type === TokenType.Directive;
 }
