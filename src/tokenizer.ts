@@ -24,7 +24,7 @@ export function consume(tokens: Token[]): Token {
   return tokens.shift()!;
 }
 
-export function expect(
+function expect(
   tokens: Token[],
   type: Token['type'],
   value?: string,
@@ -45,6 +45,14 @@ export function expectIdentifier(tokens: Token[]): string {
 export function expectParen(tokens: Token[], val: Parens): void {
   expect(tokens, TokenType.Paren, val);
 }
+
+type TokenStream = {
+  peek: () => Token;
+  consume: () => Token;
+  expect: (type: TokenType, value?: string) => Token;
+  expectIdentifier: () => string;
+  expectParen: (val: Parens) => void;
+};
 
 export function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
@@ -108,4 +116,15 @@ export function tokenize(input: string): Token[] {
 
   tokens.push(mkEOF());
   return tokens;
+}
+
+export function MakeTokenStream(input: string): TokenStream {
+  const tokens = tokenize(input);
+  return {
+    peek: () => peek(tokens),
+    consume: () => consume(tokens),
+    expect: (type, value) => expect(tokens, type, value),
+    expectIdentifier: () => expectIdentifier(tokens),
+    expectParen: (val) => expectParen(tokens, val),
+  };
 }
