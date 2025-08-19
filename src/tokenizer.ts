@@ -9,10 +9,10 @@ import {
   mkVariable,
   TokenType,
   type Parens,
-  type Token,
+  type Tokenized,
 } from './types';
 
-export function peek(tokens: Token[]): Token {
+export function peek(tokens: Tokenized[]): Tokenized {
   if (tokens.length === 0) {
     throw new Error('No tokens available');
   } else {
@@ -20,15 +20,15 @@ export function peek(tokens: Token[]): Token {
   }
 }
 
-export function consume(tokens: Token[]): Token {
+export function consume(tokens: Tokenized[]): Tokenized {
   return tokens.shift()!;
 }
 
 function expect(
-  tokens: Token[],
-  type: Token['type'],
+  tokens: Tokenized[],
+  type: Tokenized['type'],
   value?: string,
-): Token {
+): Tokenized {
   const token = consume(tokens);
   if (token.type !== type || (value && token.value !== value)) {
     throw new Error(
@@ -38,24 +38,25 @@ function expect(
   return token;
 }
 
-export function expectIdentifier(tokens: Token[]): string {
+export function expectIdentifier(tokens: Tokenized[]): string {
   return expect(tokens, TokenType.Identifier).value;
 }
 
-export function expectParen(tokens: Token[], val: Parens): void {
+export function expectParen(tokens: Tokenized[], val: Parens): void {
   expect(tokens, TokenType.Paren, val);
 }
 
-type TokenStream = {
-  peek: () => Token;
-  consume: () => Token;
-  expect: (type: TokenType, value?: string) => Token;
+export type TokenStream = {
+  peek: () => Tokenized;
+  consume: () => Tokenized;
+  expect: (type: TokenType, value?: string) => Tokenized;
   expectIdentifier: () => string;
   expectParen: (val: Parens) => void;
+  count: () => number;
 };
 
-export function tokenize(input: string): Token[] {
-  const tokens: Token[] = [];
+export function tokenize(input: string): Tokenized[] {
+  const tokens: Tokenized[] = [];
   const lines = input.split(/\r?\n/);
   let lineNumber = 0;
   for (const line of lines) {
@@ -126,5 +127,6 @@ export function MakeTokenStream(input: string): TokenStream {
     expect: (type, value) => expect(tokens, type, value),
     expectIdentifier: () => expectIdentifier(tokens),
     expectParen: (val) => expectParen(tokens, val),
+    count: () => tokens.length,
   };
 }
