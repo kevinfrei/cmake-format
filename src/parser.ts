@@ -1,3 +1,4 @@
+import { isAnyComment, TokenType, type TokenStream } from './tokenizer';
 import type {
   Argument,
   CMakeFile,
@@ -8,10 +9,8 @@ import type {
   MacroDefinition,
   ParserState,
   Statement,
-  TokenStream,
 } from './types';
 import {
-  isAnyComment,
   mkCMakeFile,
   mkCommandInvocation,
   mkConditionalBlock,
@@ -21,7 +20,6 @@ import {
   mkQuotedString,
   mkUnquotedString,
   mkVariableReference,
-  TokenType,
 } from './types';
 
 export function parseCMakeFile(
