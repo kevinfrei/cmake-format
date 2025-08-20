@@ -1,15 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { parseCMakeFile } from '../parser';
-import { printCMake } from '../printer';
-import { MakeTokenStream } from '../tokenizer';
-import { loadFile } from './load-file';
+import { printFile } from './load-file';
 
-function printFile(filePath: string): string {
-  const input = loadFile(filePath);
-  const tokens = MakeTokenStream(input);
-  const ast = parseCMakeFile(tokens, input.split('\n'));
-  return printCMake(ast).join('\n');
-}
 
 describe('Pretty Printer', () => {
   test('prints basic command', () => {
