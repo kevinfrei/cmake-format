@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import type { CMakeFile } from '../parser';
 import { parseCMakeFile } from '../parser';
 import { printCMake } from '../printer';
 import { MakeTokenStream, type TokenStream } from '../tokenizer';
-import type { CMakeFile } from '../types';
 
 export function loadFile(name: string): string {
   return readFileSync(join(import.meta.dir, 'inputs', name), 'utf-8').trim();

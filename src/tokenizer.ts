@@ -1,5 +1,6 @@
-import type { Parens } from './types';
 // Tokenizer types
+
+export type Parens = '(' | ')';
 
 export enum NumberedTokenType {
   Identifier, // = 'identifier',
@@ -100,9 +101,11 @@ export type TokenStream = {
   history: (num: number) => Token[];
 };
 
+/*
 export function mkTxtPos(line: number, col: number): TxtPos {
   return { line, col };
 }
+*/
 
 export function mkParen(value: Parens): Paren {
   return { type: TokenType.Paren, value };
