@@ -1,10 +1,3 @@
-import {
-  consume,
-  expectIdentifier,
-  expectParen,
-  peek,
-  type TokenStream,
-} from './tokenizer';
 import type {
   Argument,
   CMakeFile,
@@ -15,13 +8,12 @@ import type {
   MacroDefinition,
   ParserState,
   Statement,
-  Tokenized,
+  TokenStream,
 } from './types';
 import {
   isAnyComment,
   mkCMakeFile,
   mkCommandInvocation,
-  mkComment,
   mkConditionalBlock,
   mkElseBlock,
   mkElseIfBlock,
@@ -81,7 +73,7 @@ function parseStatement(tokens: TokenStream, state: ParserState): Statement {
       stmt = parseCommandInvocation(tokens);
       break;
   }
-  if (tokens.peek().type === TokenType.InlineComment) {
+  if (tokens.peek().type === TokenType.TailComment) {
     stmt.trailingComment = tokens.consume().value;
   }
   return { ...stmt, leadingComments };
@@ -116,7 +108,9 @@ function parseArgument(tokens: TokenStream): Argument {
     case TokenType.Variable:
       return mkVariableReference(token.value);
     default:
-      throw new Error(`Unexpected token in argument: ${token.type}`);
+      const prev = tokens.history(10);
+      const val = prev.map((t) => `${t.value}(${t.type})`).join(' * ');
+      throw new Error(`Unexpected token in argument: ${token.type} -- ${val}`);
   }
 }
 

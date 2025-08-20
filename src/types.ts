@@ -1,14 +1,27 @@
 // Tokenizer types
 
-export enum TokenType {
+export enum NumberedTokenType {
   Identifier, // = 'identifier',
   Quoted, // = 'quoted',
+  Bracketed, // = 'bracketed',
   Variable, // = 'variable',
   Paren, // = 'paren',
   Comment, // = 'comment',
-  InlineComment, // = 'inline_comment',
+  TailComment, // = 'tail_comment',
   Directive, // = 'directive',
   EOF, // = 'eof',
+}
+
+export enum TokenType {
+  Identifier = 'identifier',
+  Quoted = 'quoted',
+  Bracketed = 'bracketed',
+  Variable = 'variable',
+  Paren = 'paren',
+  Comment = 'comment',
+  TailComment = 'tail_comment',
+  Directive = 'directive',
+  EOF = 'eof',
 }
 
 export type TxtPos = {
@@ -16,7 +29,7 @@ export type TxtPos = {
   col: number;
 };
 
-export type Position = { pos: TxtPos };
+export type Position = {}; // { pos: TxtPos };
 
 export type Identifier = {
   type: TokenType.Identifier;
@@ -44,7 +57,7 @@ export type Comment = {
 } & Position;
 
 export type InlineComment = {
-  type: TokenType.InlineComment;
+  type: TokenType.TailComment;
   value: string;
 } & Position;
 
@@ -58,7 +71,7 @@ export type EOF = {
   value: '';
 } & Position;
 
-export type Tokenized =
+export type Token =
   | Identifier
   | Quoted
   | Variable
@@ -69,12 +82,13 @@ export type Tokenized =
   | EOF;
 
 export type TokenStream = {
-  peek: () => Tokenized;
-  consume: () => Tokenized;
-  expect: (type: TokenType, value?: string) => Tokenized;
+  peek: () => Token;
+  consume: () => Token;
+  expect: (type: TokenType, value?: string) => Token;
   expectIdentifier: () => string;
   expectParen: (val: Parens) => void;
   count: () => number;
+  history: (num: number) => Token[];
 };
 
 /*
@@ -86,7 +100,7 @@ export type Token = {
 */
 // Parser types
 
-export enum ParserTokenType {
+export enum NumberedParserTokenType {
   QuotedString, // = 'QuotedString',
   UnquotedString, // = 'UnquotedString',
   VariableReference, // = 'VariableReference',
@@ -96,6 +110,18 @@ export enum ParserTokenType {
   ElseBlock, // = 'ElseBlock',
   MacroDefinition, // = 'MacroDefinition',
   CMakeFile, // = 'CMakeFile',
+}
+
+export enum ParserTokenType {
+  QuotedString = 'QuotedString',
+  UnquotedString = 'UnquotedString',
+  VariableReference = 'VariableReference',
+  CommandInvocation = 'CommandInvocation',
+  ConditionalBlock = 'ConditionalBlock',
+  ElseIfBlock = 'ElseIfBlock',
+  ElseBlock = 'ElseBlock',
+  MacroDefinition = 'MacroDefinition',
+  CMakeFile = 'CMakeFile',
 }
 
 export type QuotedString = {
@@ -196,7 +222,7 @@ export function mkDirective(value: string): Directive {
 }
 
 export function mkInlineComment(value: string): InlineComment {
-  return { type: TokenType.InlineComment, value };
+  return { type: TokenType.TailComment, value };
 }
 
 export function mkComment(value: string): Comment {
@@ -264,10 +290,10 @@ export function mkMacroDefinition(
   return { type: ParserTokenType.MacroDefinition, name, params, body };
 }
 
-export function isAnyComment(token: Tokenized): token is Comment {
+export function isAnyComment(token: Token): token is Comment {
   return (
     token.type === TokenType.Comment ||
-    token.type === TokenType.InlineComment ||
+    token.type === TokenType.TailComment ||
     token.type === TokenType.Directive
   );
 }

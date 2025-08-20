@@ -1,3 +1,4 @@
+import type { Parens, Token, TokenStream } from './types';
 import {
   mkComment,
   mkDirective,
@@ -8,28 +9,30 @@ import {
   mkQuoted,
   mkVariable,
   TokenType,
-  type Parens,
-  type Tokenized,
-  type TokenStream,
 } from './types';
 
 export function MakeTokenStream(input: string): TokenStream {
-  const tokens: Tokenized[] = [];
+  const tokens: Token[] = [];
+  let curPos = 0;
 
-  function peek(): Tokenized {
-    if (tokens.length === 0) {
+  function history(num: number): Token[] {
+    return tokens.slice(Math.max(0, curPos - num), curPos);
+  }
+
+  function peek(): Token {
+    if (tokens.length <= curPos) {
       throw new Error('No tokens available');
     } else {
-      return tokens[0]!;
+      return tokens[curPos]!;
     }
   }
 
-  function consume(): Tokenized {
-    return tokens.shift()!;
+  function consume(): Token {
+    return tokens[curPos++]!;
   }
 
-  function expect(type: Tokenized['type'], value?: string): Tokenized {
-    const token = consume(tokens);
+  function expect(type: TokenType, value?: string): Token {
+    const token = consume();
     if (token.type !== type || (value && token.value !== value)) {
       throw new Error(
         `Expected ${type}${value ? ` '${value}'` : ''}, got ${token.type} '${token.value}'`,
@@ -46,11 +49,10 @@ export function MakeTokenStream(input: string): TokenStream {
     expect(TokenType.Paren, val);
   }
 
-  function tokenize(input: string): Tokenized[] {
+  function tokenize(input: string): Token[] {
     const lines = input.split(/\r?\n/);
-    let lineNumber = 0;
-    for (const line of lines) {
-      lineNumber++;
+    for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
+      const line = lines[lineNumber]!;
       const commentIndex = line.indexOf('#');
       const codePart = commentIndex >= 0 ? line.slice(0, commentIndex) : line;
       // Handle stand-alone
@@ -78,17 +80,23 @@ export function MakeTokenStream(input: string): TokenStream {
           i++;
         } else if (c === '"') {
           let j = i + 1;
-          while (j < codePart.length && codePart[j] !== '"') j++;
+          while (j < codePart.length && codePart[j] !== '"') {
+            j++;
+          }
           tokens.push(mkQuoted(codePart.slice(i + 1, j)));
           i = j + 1;
         } else if (c === '$' && codePart[i + 1] === '{') {
           let j = i + 2;
-          while (j < codePart.length && codePart[j] !== '}') j++;
+          while (j < codePart.length && codePart[j] !== '}') {
+            j++;
+          }
           tokens.push(mkVariable(codePart.slice(i + 2, j)));
           i = j + 1;
         } else {
           let j = i;
-          while (j < codePart.length && /[^\s()"$]/.test(codePart[j]!)) j++;
+          while (j < codePart.length && /[^\s()"$]/.test(codePart[j]!)) {
+            j++;
+          }
           tokens.push(mkIdentifier(codePart.slice(i, j)));
           i = j;
         }
@@ -115,6 +123,7 @@ export function MakeTokenStream(input: string): TokenStream {
     expect,
     expectIdentifier,
     expectParen,
+    history,
     count: () => tokens.length,
   };
 }
