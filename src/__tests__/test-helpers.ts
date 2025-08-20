@@ -15,16 +15,32 @@ export function llvmRepoExists(): string | undefined {
   }
 }
 
-export function tokenizeFile(filePath: string): [TokenStream, string[]] {
-  const input = loadFile(filePath);
-  return [MakeTokenStream(input), input.split('\n')];
+export function tokenizeString(content: string): [TokenStream, string[]] {
+  return [MakeTokenStream(content), content.split('\n')];
 }
+
+export function tokenizeFile(filePath: string): [TokenStream, string[]] {
+  return tokenizeString(loadFile(filePath));
+}
+
 export function parseFile(filename: string): CMakeFile {
   const [tokens, input] = tokenizeFile(filename);
   return parseCMakeFile(tokens, input);
 }
 
+export function parseString(content: string): CMakeFile {
+  const [tokens, input] = tokenizeString(content);
+  return parseCMakeFile(tokens, input);
+}
+
+export function printString(content: string): string {
+  return printCMake(parseString(content)).join('\n');
+}
+
 export function printFile(filePath: string): string {
-  const ast = parseFile(filePath);
-  return printCMake(ast).join('\n');
+  return printCMake(parseFile(filePath)).join('\n');
+}
+
+export function printFullFile(path: string): string[] {
+  return printCMake(parseString(readFileSync(path, 'utf-8')));
 }

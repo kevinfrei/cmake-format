@@ -1,4 +1,6 @@
 [test]
 coverage = true
 coverageSkipTestFiles = true
+coveragePathIgnorePatterns = "src/__tests__/test-helpers.ts"
+
 

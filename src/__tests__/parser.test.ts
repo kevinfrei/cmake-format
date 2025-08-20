@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { parseCMakeFile, ParserTokenType } from '../parser';
-import { MakeTokenStream } from '../tokenizer';
-import { parseFile } from './load-file';
+import { ParserTokenType } from '../parser';
+import { parseFile, parseString } from './test-helpers';
 
 describe('Parser', () => {
   test('parses basic command', () => {
@@ -21,33 +20,27 @@ describe('Parser', () => {
 
   test('throws on malformed input 1', () => {
     const input = 'add_executable myApp main.cpp  # missing parentheses';
-    const tokens = MakeTokenStream(input);
-    expect(() => parseCMakeFile(tokens, input.split('\n'))).toThrowError(
+    expect(() => parseString(input)).toThrowError(
       /^Expected .*, got .* 'myApp'$/,
     );
   });
 
   test('throws on malformed input 2', () => {
     const input = '( this is bad # missing parentheses';
-    const tokens = MakeTokenStream(input);
-    expect(() => parseCMakeFile(tokens, input.split('\n'))).toThrowError(
+    expect(() => parseString(input)).toThrowError(
       /^Expected statement, got .* '\('$/,
     );
   });
 
   test('throws on malformed input 3', () => {
     const input = 'test(this (is bad # missing parentheses';
-    const tokens = MakeTokenStream(input);
-    expect(() => parseCMakeFile(tokens, input.split('\n'))).toThrowError(
+    expect(() => parseString(input)).toThrowError(
       /^Unexpected token in argument/,
     );
   });
 
   test('throws on malformed input 4', () => {
     const input = 'if(TRUE)\n# comment';
-    const tokens = MakeTokenStream(input);
-    expect(() => parseCMakeFile(tokens, input.split('\n'))).toThrowError(
-      'Missing endif()',
-    );
+    expect(() => parseString(input)).toThrowError('Missing endif()');
   });
 });
