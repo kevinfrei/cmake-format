@@ -32,58 +32,67 @@ export type Token = {
   value: () => string;
   pos: () => TxtPos;
 };
-*/
 
 export type TxtPos = {
   line: number;
   col: number;
 };
 
-export type Position = {}; // { pos: TxtPos };
+export type Position = { pos: TxtPos };
+*/
 
 export type Identifier = {
   type: TokenType.Identifier;
   value: string;
-} & Position;
+};
 
 export type Quoted = {
   type: TokenType.Quoted;
   value: string;
-} & Position;
+};
+
+export type Bracketed = {
+  type: TokenType.Bracketed;
+  value: string;
+  qty: number;
+};
 
 export type Variable = {
   type: TokenType.Variable;
   value: string;
-} & Position;
+};
 
 export type Paren = {
   type: TokenType.Paren;
   value: '(' | ')';
-} & Position;
+};
 
 export type Comment = {
   type: TokenType.Comment;
   value: string;
-} & Position;
+};
 
 export type InlineComment = {
   type: TokenType.TailComment;
   value: string;
-} & Position;
+};
+
+export type Directives = '@format-on' | '@format-off';
 
 export type Directive = {
   type: TokenType.Directive;
-  value: '@skip-format' | string;
-} & Position;
+  value: Directives;
+};
 
 export type EOF = {
   type: TokenType.EOF;
   value: '';
-} & Position;
+};
 
 export type Token =
   | Identifier
   | Quoted
+  | Bracketed
   | Variable
   | Paren
   | Comment
@@ -115,6 +124,10 @@ export function mkQuoted(value: string): Quoted {
   return { type: TokenType.Quoted, value };
 }
 
+export function mkBracket(value: string, qty: number): Bracketed {
+  return { type: TokenType.Bracketed, value, qty };
+}
+
 export function mkVariable(value: string): Variable {
   return { type: TokenType.Variable, value };
 }
@@ -123,7 +136,7 @@ export function mkIdentifier(value: string): Identifier {
   return { type: TokenType.Identifier, value };
 }
 
-export function mkDirective(value: string): Directive {
+export function mkDirective(value: Directives): Directive {
   return { type: TokenType.Directive, value };
 }
 

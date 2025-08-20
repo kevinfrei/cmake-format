@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   MakeTokenStream,
+  mkBracket,
   mkComment,
   mkDirective,
   mkEOF,
@@ -95,5 +96,45 @@ describe('CMake Tokenizer', () => {
     expect(tokens.consume()).toEqual(mkParen('('));
     expect(tokens.consume()).toEqual(mkParen(')'));
     expect(tokens.consume()).toEqual(mkEOF());
+  });
+});
+
+describe('NYI: Failing tokenizer tests',() => {
+  // Go look at https://cmake.org/cmake/help/latest/manual/cmake-language.7.html for details
+  test('escape sequence' ,() => {
+    const input = "test(SINGLE\\ ARGUMENT\\;HERE)";
+    const tokens = MakeTokenStream(input);
+    expect(tokens.consume()).toEqual(mkIdentifier('test'));
+    expect(tokens.consume()).toEqual(mkParen('('));
+    expect(tokens.consume()).toEqual(mkIdentifier('SINGLE\\ ARGUMENT'));
+    expect(tokens.consume()).toEqual(mkParen(')'));
+    expect(tokens.consume()).toEqual(mkEOF());
+  });
+
+  test('multiline quoted string',() =>{
+    const input = 'message("Hello\nWorld")';
+    const tokens = MakeTokenStream(input);
+    expect(tokens.expectIdentifier()).toEqual('message');
+    tokens.expectParen('(');
+    expect(tokens.expect(TokenType.Quoted)).toEqual(mkQuoted('Hello\nWorld'));
+    tokens.expectParen(')');
+    tokens.expect(TokenType.EOF);
+  });
+
+  test('multiline bracketed string',() =>{
+    const input = 'message([==[Hello\nWorld]==])';
+    const tokens = MakeTokenStream(input);
+    expect(tokens.expectIdentifier()).toEqual('message');
+    tokens.expectParen('(');
+    expect(tokens.expect(TokenType.Bracketed)).toEqual(mkBracket('Hello\nWorld', 2));
+    tokens.expectParen(')');
+    tokens.expect(TokenType.EOF);
+  });
+
+  test('multiline bracket comment',() =>{
+    const input = '#[[Hello\nWorld]]';
+    const tokens = MakeTokenStream(input);
+    expect(tokens.expect(TokenType.Comment)).toEqual(mkComment('#[[Hello\nWorld]]'));
+    tokens.expect(TokenType.EOF);
   });
 });
