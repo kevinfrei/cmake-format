@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { printFile } from './load-file';
-
+import { printFile } from './test-helpers';
 
 describe('Pretty Printer', () => {
   test('prints basic command', () => {

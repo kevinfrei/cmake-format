@@ -1,18 +1,9 @@
 import { isUndefined } from '@freik/typechk';
 import { expect, test } from 'bun:test';
-import { readdirSync, readFileSync, statSync } from 'fs';
+import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
-import { parseCMakeFile } from '../parser';
-import { printCMake } from '../printer';
-import { MakeTokenStream } from '../tokenizer';
-import { llvmRepoExists } from './load-file';
+import { llvmRepoExists, printFullFile } from './test-helpers';
 
-function printFullFile(path: string): string[] {
-  const input = readFileSync(path, 'utf-8').trim();
-  const tokens = MakeTokenStream(input);
-  const parsed = parseCMakeFile(tokens, input.split('\n'));
-  return printCMake(parsed);
-}
 test('(FAILING): Try to process all the LLVM CMake files', async () => {
   // If there's an LLVM repo one up from here, go ahead and read it's .cmake files
   const llvmPath = llvmRepoExists();
