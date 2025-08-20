@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { parseCMakeFile } from '../parser';
+import { parseCMakeFile, ParserTokenType } from '../parser';
 import { MakeTokenStream } from '../tokenizer';
-import { ParserTokenType } from '../types';
 import { parseFile } from './load-file';
 
 describe('Parser', () => {

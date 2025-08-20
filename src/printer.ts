@@ -6,7 +6,7 @@ import {
   type ConditionalBlock,
   type MacroDefinition,
   type Statement,
-} from './types';
+} from './parser';
 
 function indent(lines: string[], level: number): string[] {
   const pad = '  '.repeat(level);
