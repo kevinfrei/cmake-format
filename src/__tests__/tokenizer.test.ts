@@ -111,7 +111,7 @@ describe('CMake Tokenizer', () => {
   });
 });
 
-describe('NYI: Tokenizer tests (all 5 failing)', () => {
+describe('(FAILING): Tokenizer tests (all 5 failing)', () => {
   // Go look at https://cmake.org/cmake/help/latest/manual/cmake-language.7.html for details
   test('escape sequence', () => {
     const tokens = MakeTokenStream("test(SINGLE\\ ARGUMENT\\;HERE)");
