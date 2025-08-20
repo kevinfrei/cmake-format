@@ -1,7 +1,6 @@
 // Tokenizer types
 
-export type Parens = '(' | ')';
-
+// This should be faster, but the strings make it more debuggable
 export enum NumberedTokenType {
   Identifier, // = 'identifier',
   Quoted, // = 'quoted',
@@ -105,10 +104,12 @@ export type TokenStream = {
   consume: () => Token;
   expect: (type: TokenType, value?: string) => Token;
   expectIdentifier: () => string;
-  expectParen: (val: Parens) => void;
+  expectOpen: () => boolean;
+  expectClose: () => boolean;
   count: () => number;
   history: (num: number) => Token[];
 };
+
 
 /*
 export function mkTxtPos(line: number, col: number): TxtPos {
@@ -116,7 +117,7 @@ export function mkTxtPos(line: number, col: number): TxtPos {
 }
 */
 
-export function mkParen(value: Parens): Paren {
+export function mkParen(value: '(' | ')'): Paren {
   return { type: TokenType.Paren, value };
 }
 
@@ -194,10 +195,6 @@ export function MakeTokenStream(input: string): TokenStream {
     return expect(TokenType.Identifier).value;
   }
 
-  function expectParen(val: Parens): void {
-    expect(TokenType.Paren, val);
-  }
-
   function tokenize(input: string): Token[] {
     const lines = input.split(/\r?\n/);
     for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
@@ -265,13 +262,15 @@ export function MakeTokenStream(input: string): TokenStream {
     tokens.push(mkEOF());
     return tokens;
   }
+
   tokenize(input);
   return {
     peek,
     consume,
     expect,
     expectIdentifier,
-    expectParen,
+    expectOpen: () => expect(TokenType.Paren, '(').value === '(',
+    expectClose: () => expect(TokenType.Paren, ')').value === ')',
     history,
     count: () => tokens.length,
   };
