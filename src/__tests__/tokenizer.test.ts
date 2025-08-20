@@ -20,10 +20,10 @@ describe('CMake Tokenizer', () => {
     const tokens = MakeTokenStream(input);
     expect(tokens.count()).toBe(6);
     expect(tokens.consume()).toEqual(mkIdentifier('add_executable'));
-    expect(tokens.consume()).toEqual(mkParen('('));
+    expect(tokens.expectOpen()).toBe(true); 
     expect(tokens.consume()).toEqual(mkIdentifier('myApp'));
     expect(tokens.consume()).toEqual(mkIdentifier('main.cpp'));
-    expect(tokens.consume()).toEqual(mkParen(')'));
+    expect(tokens.expectClose()).toBe(true);
     expect(tokens.consume()).toEqual(mkEOF());
   });
 
@@ -31,9 +31,9 @@ describe('CMake Tokenizer', () => {
     const input = `message("Hello World")`;
     const tokens = MakeTokenStream(input);
     expect(tokens.consume()).toEqual(mkIdentifier('message'));
-    expect(tokens.consume()).toEqual(mkParen('('));
+    expect(tokens.expectOpen()).toBe(true);
     expect(tokens.consume()).toEqual(mkQuoted('Hello World'));
-    expect(tokens.consume()).toEqual(mkParen(')'));
+    expect(tokens.expectClose()).toBe(true);
     expect(tokens.consume()).toEqual(mkEOF());
   });
 
@@ -41,10 +41,10 @@ describe('CMake Tokenizer', () => {
     const input = 'set(VAR ${VALUE})';
     const tokens = MakeTokenStream(input);
     expect(tokens.consume()).toEqual(mkIdentifier('set'));
-    expect(tokens.consume()).toEqual(mkParen('('));
+    expect(tokens.expectOpen()).toBe(true);
     expect(tokens.consume()).toEqual(mkIdentifier('VAR'));
     expect(tokens.consume()).toEqual(mkVariable('VALUE'));
-    expect(tokens.consume()).toEqual(mkParen(')'));
+    expect(tokens.expectClose()).toBe(true);
     expect(tokens.consume()).toEqual(mkEOF());
   });
 
@@ -82,6 +82,18 @@ describe('CMake Tokenizer', () => {
     expect(() => tokens.peek()).toThrow();
   });
 
+  test('comments', () => {
+    const tokens = MakeTokenStream('# Comment should eat the "quote"');
+    expect(tokens.consume()).toEqual(mkComment('# Comment should eat the "quote"'));
+    expect(tokens.consume()).toEqual(mkEOF());
+    const tokens2 = MakeTokenStream('thing_here() # Comment should eat the "quote"');
+    expect(tokens2.consume()).toEqual(mkIdentifier('thing_here'));
+    expect(tokens2.expectOpen()).toBe(true);
+    expect(tokens2.expectClose()).toBe(true);
+    expect(tokens2.consume()).toEqual(mkInlineComment('# Comment should eat the "quote"'));
+    expect(tokens2.consume()).toEqual(mkEOF());
+  })
+
   test('tokenizing comments & directives before code', () => {
     const input = '# @format-off\n# comment\nif(test)\n# @format-off\nendif()';
     const tokens = MakeTokenStream(input);
@@ -93,48 +105,50 @@ describe('CMake Tokenizer', () => {
     expect(tokens.consume()).toEqual(mkParen(')'));
     expect(tokens.consume()).toEqual(mkDirective('@format-off'));
     expect(tokens.consume()).toEqual(mkIdentifier('endif'));
-    expect(tokens.consume()).toEqual(mkParen('('));
-    expect(tokens.consume()).toEqual(mkParen(')'));
+    expect(tokens.expectOpen()).toBe(true);
+    expect(tokens.expectClose()).toBe(true);
     expect(tokens.consume()).toEqual(mkEOF());
   });
 });
 
-describe('NYI: Failing tokenizer tests',() => {
+describe('NYI: Tokenizer tests (all 5 failing)', () => {
   // Go look at https://cmake.org/cmake/help/latest/manual/cmake-language.7.html for details
-  test('escape sequence' ,() => {
-    const input = "test(SINGLE\\ ARGUMENT\\;HERE)";
-    const tokens = MakeTokenStream(input);
+  test('escape sequence', () => {
+    const tokens = MakeTokenStream("test(SINGLE\\ ARGUMENT\\;HERE)");
     expect(tokens.consume()).toEqual(mkIdentifier('test'));
-    expect(tokens.consume()).toEqual(mkParen('('));
+    expect(tokens.expectOpen()).toBe(true);
     expect(tokens.consume()).toEqual(mkIdentifier('SINGLE\\ ARGUMENT'));
-    expect(tokens.consume()).toEqual(mkParen(')'));
+    expect(tokens.expectClose()).toBe(true);
     expect(tokens.consume()).toEqual(mkEOF());
   });
 
-  test('multiline quoted string',() =>{
-    const input = 'message("Hello\nWorld")';
-    const tokens = MakeTokenStream(input);
+  test('multiline quoted string', () => {
+    const tokens = MakeTokenStream("message(\"Hello\\nWorld\")");
     expect(tokens.expectIdentifier()).toEqual('message');
-    tokens.expectParen('(');
+    expect(tokens.expectOpen()).toBeTrue()
     expect(tokens.expect(TokenType.Quoted)).toEqual(mkQuoted('Hello\nWorld'));
-    tokens.expectParen(')');
-    tokens.expect(TokenType.EOF);
+    expect(tokens.expectClose()).toBeTrue();
+    expect(tokens.expect(TokenType.EOF)).toEqual(mkEOF());
   });
 
-  test('multiline bracketed string',() =>{
-    const input = 'message([==[Hello\nWorld]==])';
-    const tokens = MakeTokenStream(input);
+  test('multiline bracketed string', () => {
+    const tokens = MakeTokenStream("message([==[Hello\nWorld]==])");
     expect(tokens.expectIdentifier()).toEqual('message');
-    tokens.expectParen('(');
+    expect(tokens.expectOpen()).toBe(true);
     expect(tokens.expect(TokenType.Bracketed)).toEqual(mkBracket('Hello\nWorld', 2));
-    tokens.expectParen(')');
+    expect(tokens.expectClose()).toBe(true);
+    expect(tokens.expect(TokenType.EOF)).toEqual(mkEOF());
+  });
+
+  test('multiline bracket simple', () => {
+    const tokens = MakeTokenStream('#[[Hello\nWorld]]');
+    expect(tokens.expect(TokenType.Comment)).toEqual(mkComment('#[=[Hello\nWorld]=]'));
     tokens.expect(TokenType.EOF);
   });
 
-  test('multiline bracket comment',() =>{
-    const input = '#[[Hello\nWorld]]';
-    const tokens = MakeTokenStream(input);
-    expect(tokens.expect(TokenType.Comment)).toEqual(mkComment('#[[Hello\nWorld]]'));
+  test('multiline bracket comment', () => {
+    const tokens = MakeTokenStream('#[=[H[==[ello\nWorld]===]=]');
+    expect(tokens.expect(TokenType.Comment)).toEqual(mkComment('#[=[H[==[ello\nWorld]===]=]'));
     tokens.expect(TokenType.EOF);
   });
 });
