@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { MakeTokenStream } from '../tokenizer';
 import {
+  MakeTokenStream,
   mkComment,
   mkDirective,
   mkEOF,
@@ -11,7 +11,7 @@ import {
   mkVariable,
   TokenType,
   type Token,
-} from '../types';
+} from '../tokenizer';
 
 describe('CMake Tokenizer', () => {
   test('tokenizes basic command', () => {
