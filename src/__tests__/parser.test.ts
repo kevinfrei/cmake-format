@@ -1,21 +1,18 @@
 import { describe, expect, test } from 'bun:test';
 import { parseCMakeFile } from '../parser';
 import { MakeTokenStream } from '../tokenizer';
-import { ParserTokenType } from '../types';
-import { loadFile } from './load-file';
+import { ParserTokenType, type CMakeFile } from '../types';
+import { loadFile, parseFile } from './load-file';
+
 
 describe('Parser', () => {
   test('parses basic command', () => {
-    const input = loadFile('simple.cmake');
-    const tokens = MakeTokenStream(input);
-    const ast = parseCMakeFile(tokens, input.split('\n'));
+    const ast = parseFile('simple.cmake');
     expect(ast.statements.length).toBeGreaterThan(0);
   });
 
   test('parses macros and conditionals', () => {
-    const input = loadFile('grammar.cmake');
-    const tokens = MakeTokenStream(input);
-    const ast = parseCMakeFile(tokens, input.split('\n'));
+    const ast = parseFile('grammar.cmake');
     expect(
       ast.statements.some((s) => s.type === ParserTokenType.MacroDefinition),
     ).toBe(true);
