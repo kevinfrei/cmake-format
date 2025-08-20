@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { Token } from 'typescript';
-import { consume, MakeTokenStream, peek, tokenize } from '../tokenizer';
+import { MakeTokenStream } from '../tokenizer';
 import {
   mkComment,
   mkDirective,
@@ -11,7 +10,7 @@ import {
   mkQuoted,
   mkVariable,
   TokenType,
-  type Tokenized,
+  type Token,
 } from '../types';
 
 describe('CMake Tokenizer', () => {
@@ -51,7 +50,7 @@ describe('CMake Tokenizer', () => {
   test('tokenizes inline comment', () => {
     const input = 'add_library(core STATIC core.cpp) # builds core';
     const tokens = MakeTokenStream(input);
-    let last: Tokenized = mkEOF();
+    let last: Token = mkEOF();
     while (tokens.peek().type !== TokenType.EOF) {
       last = tokens.consume();
     }
