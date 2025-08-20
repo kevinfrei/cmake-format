@@ -13,7 +13,7 @@ function printFullFile(path: string): string[] {
   const parsed = parseCMakeFile(tokens, input.split('\n'));
   return printCMake(parsed);
 }
-test('Try to process all the LLVM CMake files', async () => {
+test('(FAILING): Try to process all the LLVM CMake files', async () => {
   // If there's an LLVM repo one up from here, go ahead and read it's .cmake files
   const llvmPath = llvmRepoExists();
   if (isUndefined(llvmPath)) {
