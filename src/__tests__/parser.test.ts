@@ -12,10 +12,10 @@ describe('Parser', () => {
     const ast = parseFile('grammar.cmake');
     expect(
       ast.statements.some((s) => s.type === ParserTokenType.MacroDefinition),
-    ).toBe(true);
+    ).toBeTrue();
     expect(
       ast.statements.some((s) => s.type === ParserTokenType.ConditionalBlock),
-    ).toBe(true);
+    ).toBeTrue();
   });
 
   test('throws on malformed input 1', () => {

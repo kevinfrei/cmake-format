@@ -19,32 +19,32 @@ describe('CMake Tokenizer', () => {
     const input = `add_executable(myApp main.cpp)`;
     const tokens = MakeTokenStream(input);
     expect(tokens.count()).toBe(6);
-    expect(tokens.consume()).toEqual(mkIdentifier('add_executable'));
-    expect(tokens.expectOpen()).toBe(true); 
-    expect(tokens.consume()).toEqual(mkIdentifier('myApp'));
-    expect(tokens.consume()).toEqual(mkIdentifier('main.cpp'));
-    expect(tokens.expectClose()).toBe(true);
+    expect(tokens.expectIdentifier()).toEqual('add_executable');
+    expect(tokens.expectOpen()).toBeTrue(); 
+    expect(tokens.expectIdentifier()).toEqual('myApp');
+    expect(tokens.expectIdentifier()).toEqual('main.cpp');
+    expect(tokens.expectClose()).toBeTrue();
     expect(tokens.consume()).toEqual(mkEOF());
   });
 
   test('tokenizes quoted strings', () => {
     const input = `message("Hello World")`;
     const tokens = MakeTokenStream(input);
-    expect(tokens.consume()).toEqual(mkIdentifier('message'));
-    expect(tokens.expectOpen()).toBe(true);
-    expect(tokens.consume()).toEqual(mkQuoted('Hello World'));
-    expect(tokens.expectClose()).toBe(true);
+    expect(tokens.expectIdentifier()).toEqual('message');
+    expect(tokens.expectOpen()).toBeTrue();
+    expect(tokens.expect(TokenType.Quoted, 'Hello World')).toBeDefined;
+    expect(tokens.expectClose()).toBeTrue();
     expect(tokens.consume()).toEqual(mkEOF());
   });
 
   test('tokenizes variable references', () => {
     const input = 'set(VAR ${VALUE})';
     const tokens = MakeTokenStream(input);
-    expect(tokens.consume()).toEqual(mkIdentifier('set'));
-    expect(tokens.expectOpen()).toBe(true);
-    expect(tokens.consume()).toEqual(mkIdentifier('VAR'));
-    expect(tokens.consume()).toEqual(mkVariable('VALUE'));
-    expect(tokens.expectClose()).toBe(true);
+    expect(tokens.expectIdentifier()).toEqual('set');
+    expect(tokens.expectOpen()).toBeTrue();
+    expect(tokens.expectIdentifier()).toEqual('VAR');
+    expect(tokens.expect(TokenType.Variable, 'VALUE')).toBeDefined();
+    expect(tokens.expectClose()).toBeTrue();
     expect(tokens.consume()).toEqual(mkEOF());
   });
 
@@ -61,19 +61,19 @@ describe('CMake Tokenizer', () => {
   test('tokenizes directive comment', () => {
     const input = `# @format-off`;
     const tokens = MakeTokenStream(input);
-    expect(tokens.consume()).toEqual(mkDirective('@format-off'));
+    expect(tokens.expect(TokenType.Directive, '@format-off')).toBeDefined();
     expect(tokens.consume()).toEqual(mkEOF());
   });
 
   test('tokenizes mixed line with code and directive', () => {
     const input = `add_executable(app main.cpp) # @format-off`;
     const tokens = MakeTokenStream(input);
-    expect(tokens.consume()).toEqual(mkIdentifier('add_executable'));
-    expect(tokens.consume()).toEqual(mkParen('('));
-    expect(tokens.consume()).toEqual(mkIdentifier('app'));
-    expect(tokens.consume()).toEqual(mkIdentifier('main.cpp'));
-    expect(tokens.consume()).toEqual(mkParen(')'));
-    expect(tokens.consume()).toEqual(mkDirective('@format-off'));
+    expect(tokens.expectIdentifier()).toEqual('add_executable');
+    expect(tokens.expectOpen()).toBeTrue();
+    expect(tokens.expectIdentifier()).toEqual('app');
+    expect(tokens.expectIdentifier()).toEqual('main.cpp');
+    expect(tokens.expectClose()).toBeTrue();
+    expect(tokens.expect(TokenType.Directive, '@format-off')).toBeDefined();
   });
 
   test('token end of stream failure', () => {
@@ -84,29 +84,29 @@ describe('CMake Tokenizer', () => {
 
   test('comments', () => {
     const tokens = MakeTokenStream('# Comment should eat the "quote"');
-    expect(tokens.consume()).toEqual(mkComment('# Comment should eat the "quote"'));
+    expect(tokens.expect(TokenType.Comment, '# Comment should eat the "quote"')).toBeDefined();
     expect(tokens.consume()).toEqual(mkEOF());
     const tokens2 = MakeTokenStream('thing_here() # Comment should eat the "quote"');
-    expect(tokens2.consume()).toEqual(mkIdentifier('thing_here'));
-    expect(tokens2.expectOpen()).toBe(true);
-    expect(tokens2.expectClose()).toBe(true);
-    expect(tokens2.consume()).toEqual(mkInlineComment('# Comment should eat the "quote"'));
+    expect(tokens2.expectIdentifier()).toEqual('thing_here');
+    expect(tokens2.expectOpen()).toBeTrue();
+    expect(tokens2.expectClose()).toBeTrue();
+    expect(tokens2.expect(TokenType.TailComment, '# Comment should eat the "quote"')).toBeDefined();
     expect(tokens2.consume()).toEqual(mkEOF());
   })
 
   test('tokenizing comments & directives before code', () => {
     const input = '# @format-off\n# comment\nif(test)\n# @format-off\nendif()';
     const tokens = MakeTokenStream(input);
-    expect(tokens.consume()).toEqual(mkDirective('@format-off'));
-    expect(tokens.consume()).toEqual(mkComment('# comment'));
-    expect(tokens.consume()).toEqual(mkIdentifier('if'));
-    expect(tokens.consume()).toEqual(mkParen('('));
-    expect(tokens.consume()).toEqual(mkIdentifier('test'));
-    expect(tokens.consume()).toEqual(mkParen(')'));
-    expect(tokens.consume()).toEqual(mkDirective('@format-off'));
-    expect(tokens.consume()).toEqual(mkIdentifier('endif'));
-    expect(tokens.expectOpen()).toBe(true);
-    expect(tokens.expectClose()).toBe(true);
+    expect(tokens.expect(TokenType.Directive, '@format-off')).toBeDefined();
+    expect(tokens.expect(TokenType.Comment, '# comment')).toBeDefined();
+    expect(tokens.expectIdentifier()).toEqual('if');
+    expect(tokens.expectOpen()).toBeTrue();
+    expect(tokens.expectIdentifier()).toEqual('test');
+    expect(tokens.expectClose()).toBeTrue();
+    expect(tokens.expect(TokenType.Directive, '@format-off')).toBeDefined();
+    expect(tokens.expectIdentifier()).toEqual('endif');
+    expect(tokens.expectOpen()).toBeTrue();
+    expect(tokens.expectClose()).toBeTrue();
     expect(tokens.consume()).toEqual(mkEOF());
   });
 });
@@ -115,10 +115,10 @@ describe('(FAILING): Tokenizer tests (all 5 failing)', () => {
   // Go look at https://cmake.org/cmake/help/latest/manual/cmake-language.7.html for details
   test('escape sequence', () => {
     const tokens = MakeTokenStream("test(SINGLE\\ ARGUMENT\\;HERE)");
-    expect(tokens.consume()).toEqual(mkIdentifier('test'));
-    expect(tokens.expectOpen()).toBe(true);
-    expect(tokens.consume()).toEqual(mkIdentifier('SINGLE\\ ARGUMENT'));
-    expect(tokens.expectClose()).toBe(true);
+    expect(tokens.expectIdentifier()).toEqual('test');
+    expect(tokens.expectOpen()).toBeTrue();
+    expect(tokens.expect(TokenType.Identifier)).toEqual('SINGLE\\ ARGUMENT');
+    expect(tokens.expectClose()).toBeTrue();
     expect(tokens.consume()).toEqual(mkEOF());
   });
 
@@ -126,17 +126,17 @@ describe('(FAILING): Tokenizer tests (all 5 failing)', () => {
     const tokens = MakeTokenStream("message(\"Hello\\nWorld\")");
     expect(tokens.expectIdentifier()).toEqual('message');
     expect(tokens.expectOpen()).toBeTrue()
-    expect(tokens.expect(TokenType.Quoted)).toEqual(mkQuoted('Hello\nWorld'));
+    expect(tokens.expect(TokenType.Quoted)).toEqual('Hello\nWorld');
     expect(tokens.expectClose()).toBeTrue();
-    expect(tokens.expect(TokenType.EOF)).toEqual(mkEOF());
+    expect(tokens.expect(TokenType.EOF)).toBeDefined();
   });
 
   test('multiline bracketed string', () => {
     const tokens = MakeTokenStream("message([==[Hello\nWorld]==])");
     expect(tokens.expectIdentifier()).toEqual('message');
-    expect(tokens.expectOpen()).toBe(true);
+    expect(tokens.expectOpen()).toBeTrue();
     expect(tokens.expect(TokenType.Bracketed)).toEqual(mkBracket('Hello\nWorld', 2));
-    expect(tokens.expectClose()).toBe(true);
+    expect(tokens.expectClose()).toBeTrue();
     expect(tokens.expect(TokenType.EOF)).toEqual(mkEOF());
   });
 
