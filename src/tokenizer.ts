@@ -1,6 +1,6 @@
 // Tokenizer types
 
-import { isUndefined } from '@freik/typechk';
+import { isString, isUndefined } from '@freik/typechk';
 
 // This should be faster, but the strings make it more debuggable
 export enum NumberedTokenType {
@@ -43,6 +43,7 @@ export type Token = {
   isOpenParen: () => boolean;
   isCloseParen: () => boolean;
   isComment: () => boolean;
+  isIdentifier: (val?: string | string[]) => boolean;
   toString: () => string;
   type: () => TokenType;
   value: () => string | undefined;
@@ -59,25 +60,30 @@ export type TokenStream = {
   history: (num: number) => Token[];
 };
 
-/*
-export function mkTxtPos(line: number, col: number): TxtPos {
-  return { line, col };
-}
-*/
-
 export function MakeToken(t: TokenType, v?: string): Token {
-  const typ = t;
-  const val = v;
+  const typ: TokenType = t;
+  const val: string | undefined = v;
   return {
-    is: (t, v?: string) => t === typ && (isUndefined(v) || v === val),
+    is: (t: TokenType, v?: string) =>
+      t === typ && (isUndefined(v) || v === val),
+    isIdentifier: (v?: string | string[]) => {
+      if (typ !== TokenType.Identifier) {
+        return false;
+      } else if (isUndefined(v)) {
+        return true;
+      } else if (isString(v)) {
+        return v === val;
+      } else {
+        return !isUndefined(val) && v.includes(val);
+      }
+    },
     isOpenParen: () => typ === TokenType.Paren && val === '(',
     isCloseParen: () => typ === TokenType.Paren && val === ')',
     isComment: () =>
       typ === TokenType.Comment ||
       typ === TokenType.TailComment ||
       typ === TokenType.Directive,
-    toString: () =>
-      isUndefined(val) ? `Token(${typ})` : `Token(${typ}, ${val})`,
+    toString: () => `Token(${typ}${isUndefined(val) ? '' : `, ${val}`})`,
     type: () => typ,
     value: () => val,
   };

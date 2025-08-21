@@ -181,7 +181,7 @@ function collectLeadingComments(
 function parseStatement(tokens: TokenStream, state: ParserState): Statement {
   const leadingComments = collectLeadingComments(tokens, state);
   const next = tokens.peek();
-  if (!next.is(TokenType.Identifier)) {
+  if (!next.isIdentifier()) {
     throw new Error(`Expected statement, got ${next}`);
   }
   let stmt: Statement;
@@ -250,7 +250,7 @@ function parseConditionalBlock(
   while (true) {
     const leadingComments = collectLeadingComments(tokens, state);
     const next = tokens.peek();
-    if (!next.is(TokenType.Identifier)) break;
+    if (!next.isIdentifier()) break;
 
     switch (next.value()) {
       case 'elseif':
@@ -288,10 +288,7 @@ function parseElseIfBlock(
   tokens.expectClose();
 
   const body: Statement[] = [];
-  while (
-    tokens.peek().is(TokenType.Identifier) &&
-    !['elseif', 'else', 'endif'].includes(tokens.peek().value()!)
-  ) {
+  while (!tokens.peek().isIdentifier(['elseif', 'else', 'endif'])) {
     body.push(parseStatement(tokens, state));
   }
 
@@ -304,7 +301,7 @@ function parseElseBlock(tokens: TokenStream, state: ParserState): ElseBlock {
   tokens.expectClose();
 
   const body: Statement[] = [];
-  while (!tokens.peek().is(TokenType.Identifier, 'endif')) {
+  while (!tokens.peek().isIdentifier('endif')) {
     body.push(parseStatement(tokens, state));
   }
 
@@ -320,14 +317,14 @@ function parseMacroDefinition(
   const name = tokens.expectIdentifier();
   const params: string[] = [];
 
-  while (tokens.peek().is(TokenType.Identifier)) {
+  while (tokens.peek().isIdentifier()) {
     params.push(tokens.expectIdentifier());
   }
 
   tokens.expectClose();
 
   const body: Statement[] = [];
-  while (!tokens.peek().is(TokenType.Identifier, 'endmacro')) {
+  while (!tokens.peek().isIdentifier('endmacro')) {
     body.push(parseStatement(tokens, state));
   }
 
