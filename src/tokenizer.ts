@@ -1,5 +1,7 @@
 // Tokenizer types
 
+import { isUndefined } from '@freik/typechk';
+
 // This should be faster, but the strings make it more debuggable
 export enum NumberedTokenType {
   Identifier, // = 'identifier',
@@ -26,12 +28,6 @@ export enum TokenType {
 }
 
 /*
-export type Token = {
-  type: () => TokenType;
-  value: () => string;
-  pos: () => TxtPos;
-};
-
 export type TxtPos = {
   line: number;
   col: number;
@@ -40,64 +36,17 @@ export type TxtPos = {
 export type Position = { pos: TxtPos };
 */
 
-export type Identifier = {
-  type: TokenType.Identifier;
-  value: string;
-};
-
-export type Quoted = {
-  type: TokenType.Quoted;
-  value: string;
-};
-
-export type Bracketed = {
-  type: TokenType.Bracketed;
-  value: string;
-  qty: number;
-};
-
-export type Variable = {
-  type: TokenType.Variable;
-  value: string;
-};
-
-export type Paren = {
-  type: TokenType.Paren;
-  value: '(' | ')';
-};
-
-export type Comment = {
-  type: TokenType.Comment;
-  value: string;
-};
-
-export type InlineComment = {
-  type: TokenType.TailComment;
-  value: string;
-};
-
 export type Directives = '@format-on' | '@format-off';
 
-export type Directive = {
-  type: TokenType.Directive;
-  value: Directives;
+export type Token = {
+  is: (type: TokenType, val?: string) => boolean;
+  isOpenParen: () => boolean;
+  isCloseParen: () => boolean;
+  isComment: () => boolean;
+  toString: () => string;
+  type: () => TokenType;
+  value: () => string | undefined;
 };
-
-export type EOF = {
-  type: TokenType.EOF;
-  value: '';
-};
-
-export type Token =
-  | Identifier
-  | Quoted
-  | Bracketed
-  | Variable
-  | Paren
-  | Comment
-  | InlineComment
-  | Directive
-  | EOF;
 
 export type TokenStream = {
   peek: () => Token;
@@ -110,55 +59,64 @@ export type TokenStream = {
   history: (num: number) => Token[];
 };
 
-
 /*
 export function mkTxtPos(line: number, col: number): TxtPos {
   return { line, col };
 }
 */
 
-export function mkParen(value: '(' | ')'): Paren {
-  return { type: TokenType.Paren, value };
+export function MakeToken(t: TokenType, v?: string): Token {
+  const typ = t;
+  const val = v;
+  return {
+    is: (t, v?: string) => t === typ && (isUndefined(v) || v === val),
+    isOpenParen: () => typ === TokenType.Paren && val === '(',
+    isCloseParen: () => typ === TokenType.Paren && val === ')',
+    isComment: () =>
+      typ === TokenType.Comment ||
+      typ === TokenType.TailComment ||
+      typ === TokenType.Directive,
+    toString: () =>
+      isUndefined(val) ? `Token(${typ})` : `Token(${typ}, ${val})`,
+    type: () => typ,
+    value: () => val,
+  };
 }
 
-export function mkQuoted(value: string): Quoted {
-  return { type: TokenType.Quoted, value };
+export function MakeParen(value: '(' | ')'): Token {
+  return MakeToken(TokenType.Paren, value);
 }
 
-export function mkBracket(value: string, qty: number): Bracketed {
-  return { type: TokenType.Bracketed, value, qty };
+export function MakeQuoted(value: string): Token {
+  return MakeToken(TokenType.Quoted, value);
 }
 
-export function mkVariable(value: string): Variable {
-  return { type: TokenType.Variable, value };
+export function MakeBracket(value: string, qty: number): Token {
+  return MakeToken(TokenType.Bracketed, value);
 }
 
-export function mkIdentifier(value: string): Identifier {
-  return { type: TokenType.Identifier, value };
+export function MakeVariable(value: string): Token {
+  return MakeToken(TokenType.Variable, value);
 }
 
-export function mkDirective(value: Directives): Directive {
-  return { type: TokenType.Directive, value };
+export function MakeIdentifier(value: string): Token {
+  return MakeToken(TokenType.Identifier, value);
 }
 
-export function mkInlineComment(value: string): InlineComment {
-  return { type: TokenType.TailComment, value };
+export function MakeDirective(value: Directives): Token {
+  return MakeToken(TokenType.Directive, value);
 }
 
-export function mkComment(value: string): Comment {
-  return { type: TokenType.Comment, value };
+export function MakeInlineComment(value: string): Token {
+  return MakeToken(TokenType.TailComment, value);
 }
 
-export function mkEOF(): EOF {
-  return { type: TokenType.EOF, value: '' };
+export function MakeComment(value: string): Token {
+  return MakeToken(TokenType.Comment, value);
 }
 
-export function isAnyComment(token: Token): token is Comment {
-  return (
-    token.type === TokenType.Comment ||
-    token.type === TokenType.TailComment ||
-    token.type === TokenType.Directive
-  );
+export function MakeEOF(): Token {
+  return MakeToken(TokenType.EOF, '');
 }
 
 export function MakeTokenStream(input: string): TokenStream {
@@ -183,16 +141,16 @@ export function MakeTokenStream(input: string): TokenStream {
 
   function expect(type: TokenType, value?: string): Token {
     const token = consume();
-    if (token.type !== type || (value && token.value !== value)) {
-      throw new Error(
-        `Expected ${type}${value ? ` '${value}'` : ''}, got ${token.type} '${token.value}'`,
-      );
+    if (token.is(type, value)) {
+      return token;
     }
-    return token;
+    throw new Error(
+      `Expected\n\tToken(${type}${value ? `, ${value}` : ''})\ngot\n\t${token}`,
+    );
   }
 
   function expectIdentifier(): string {
-    return expect(TokenType.Identifier).value;
+    return expect(TokenType.Identifier).value()!;
   }
 
   function tokenize(input: string): Token[] {
@@ -205,11 +163,11 @@ export function MakeTokenStream(input: string): TokenStream {
       if (codePart.trim().length === 0 && commentIndex >= 0) {
         const comment = line.slice(commentIndex).trim();
         if (comment.includes('@format-on')) {
-          tokens.push(mkDirective('@format-on'));
+          tokens.push(MakeDirective('@format-on'));
         } else if (comment.includes('@format-off')) {
-          tokens.push(mkDirective('@format-off'));
+          tokens.push(MakeDirective('@format-off'));
         } else {
-          tokens.push(mkComment(comment));
+          tokens.push(MakeComment(comment));
         }
         continue;
       }
@@ -222,44 +180,44 @@ export function MakeTokenStream(input: string): TokenStream {
         if (/\s/.test(c)) {
           i++;
         } else if (c === '(' || c === ')') {
-          tokens.push(mkParen(c));
+          tokens.push(MakeParen(c));
           i++;
         } else if (c === '"') {
           let j = i + 1;
           while (j < codePart.length && codePart[j] !== '"') {
             j++;
           }
-          tokens.push(mkQuoted(codePart.slice(i + 1, j)));
+          tokens.push(MakeQuoted(codePart.slice(i + 1, j)));
           i = j + 1;
         } else if (c === '$' && codePart[i + 1] === '{') {
           let j = i + 2;
           while (j < codePart.length && codePart[j] !== '}') {
             j++;
           }
-          tokens.push(mkVariable(codePart.slice(i + 2, j)));
+          tokens.push(MakeVariable(codePart.slice(i + 2, j)));
           i = j + 1;
         } else {
           let j = i;
           while (j < codePart.length && /[^\s()"$]/.test(codePart[j]!)) {
             j++;
           }
-          tokens.push(mkIdentifier(codePart.slice(i, j)));
+          tokens.push(MakeIdentifier(codePart.slice(i, j)));
           i = j;
         }
       }
 
       if (commentPart) {
         if (commentPart.includes('@format-on')) {
-          tokens.push(mkDirective('@format-on'));
+          tokens.push(MakeDirective('@format-on'));
         } else if (commentPart.includes('@format-off')) {
-          tokens.push(mkDirective('@format-off'));
+          tokens.push(MakeDirective('@format-off'));
         } else {
-          tokens.push(mkInlineComment(commentPart));
+          tokens.push(MakeInlineComment(commentPart));
         }
       }
     }
 
-    tokens.push(mkEOF());
+    tokens.push(MakeEOF());
     return tokens;
   }
 
@@ -269,8 +227,8 @@ export function MakeTokenStream(input: string): TokenStream {
     consume,
     expect,
     expectIdentifier,
-    expectOpen: () => expect(TokenType.Paren, '(').value === '(',
-    expectClose: () => expect(TokenType.Paren, ')').value === ')',
+    expectOpen: () => expect(TokenType.Paren, '(').isOpenParen(),
+    expectClose: () => expect(TokenType.Paren, ')').isCloseParen(),
     history,
     count: () => tokens.length,
   };
