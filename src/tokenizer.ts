@@ -1,6 +1,7 @@
 // Tokenizer types
 
 import { isString, isUndefined } from '@freik/typechk';
+import { start } from 'repl';
 
 // This should be faster, but the strings make it more debuggable
 export enum NumberedTokenType {
@@ -59,6 +60,54 @@ export type TokenStream = {
   count: () => number;
   history: (num: number) => Token[];
 };
+
+const enum LineState {
+  Clear,
+  Quote,
+  BracketArg,
+  BracketComment
+}
+
+type ClearState = {
+  state: LineState.Clear;
+}
+
+type QuoteState = {
+  state: LineState.Quote
+}
+
+type BracketArgState = {
+  state: LineState.BracketArg;
+  equals: number;
+}
+
+type BracketCommentState = {
+  state: LineState.BracketComment;
+  equals: number;
+}
+
+
+const TokenStateClear: ClearState = {
+  state: LineState.Clear
+};
+
+const TokenStateQuote: QuoteState = {
+  state: LineState.Quote
+};
+
+const TokenStateBArg = (equals: number): BracketArgState => ({
+  state: LineState.BracketArg,
+  equals
+});
+
+const TokenStateBComment = (equals: number): BracketCommentState => ({
+  state: LineState.BracketComment,
+  equals
+});
+
+type TokenState = ClearState | QuoteState | BracketArgState | BracketCommentState;
+
+type TokenResult = {state: TokenState, linePos: number, curTok: string};
 
 export function MakeToken(t: TokenType, v?: string): Token {
   const typ: TokenType = t;
@@ -159,10 +208,82 @@ export function MakeTokenStream(input: string): TokenStream {
     return expect(TokenType.Identifier).value()!;
   }
 
+  function MaybePush(curToken: string): string {
+    if (curToken.length > 0) {
+      tokens.push(MakeIdentifier(curToken));
+    }
+    return '';
+  }
+
+  const bracketReg = /#\s*\[(?<equals>:=*)\[/;
+  function StartComment(line:string, linePos:number): TokenResult {
+    // Check to see if this comment is just through the end of the line, or if it starts a bracket-comment
+
+    const rest = line.substring(linePos);
+    const bracketMatch = rest.match(bracketReg);
+    if (bracketMatch === null) {
+      tokens.push(MakeComment(rest));
+      return { state: TokenStateClear, linePos: line.length, curTok: '' };
+    }
+    // If it was a bracket comment, we'll just register that we're in that state, and keep slurping
+    return { state: TokenStateBComment(bracketMatch.groups?.equals?.length || 0), linePos: linePos + bracketMatch[0].length, curTok: rest };
+  }
+
   function tokenize(input: string): Token[] {
     const lines = input.split(/\r?\n/);
+    let state: TokenState = TokenStateClear;
     for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
       const line = lines[lineNumber]!;
+      let curTok = '';
+      for (let linePos = 0; linePos < line.length; linePos++) {
+        switch (state.state) {
+          case LineState.Clear:
+            // Normal tokenization state:
+            switch (line[linePos]) {
+              case '#':
+                curTok = MaybePush(curTok);
+                ({state, linePos, curTok} = StartComment(line, linePos));
+                continue;
+              case '"':
+                curTok = MaybePush(curTok);
+                state = TokenStateQuote;
+                curTok += line[linePos];
+                continue;
+              case '[':
+                curTok = MaybePush(curTok);
+                state = LineState.BracketArg;
+                curTok += line[linePos];
+                continue;
+              case '(':
+              case ')':
+                if (curTok.length > 0) {
+                  tokens.push(MakeIdentifier(curTok));
+                  curTok = '';
+                }
+                tokens.push(MakeParen(line[linePos] as '(' | ')'));
+                continue;
+              case ' ':
+              case '\t':
+                if (curTok.length > 0) {
+                  tokens.push(MakeIdentifier(curTok));
+                  curTok = '';
+                }
+                continue;
+              default:
+                curTok += line[linePos];
+                break;
+            }
+            break;
+          case LineState.BracketArg:
+          case LineState.BracketComment:
+          case LineState.Quote:
+            // In these states, the entire line is considered part of the argument/comment/string
+            tokens.push(MakeBracket(line, 2));
+            state = TokenState.Clear;
+            continue;
+        }
+      }
+
       const commentIndex = line.indexOf('#');
       const codePart = commentIndex >= 0 ? line.slice(0, commentIndex) : line;
       // Handle stand-alone
