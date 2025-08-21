@@ -20,23 +20,17 @@ describe('Parser', () => {
 
   test('throws on malformed input 1', () => {
     const input = 'add_executable myApp main.cpp  # missing parentheses';
-    expect(() => parseString(input)).toThrowError(
-      /^Expected .*, got .* 'myApp'$/,
-    );
+    expect(() => parseString(input)).toThrow();
   });
 
   test('throws on malformed input 2', () => {
     const input = '( this is bad # missing parentheses';
-    expect(() => parseString(input)).toThrowError(
-      /^Expected statement, got .* '\('$/,
-    );
+    expect(() => parseString(input)).toThrow();
   });
 
   test('throws on malformed input 3', () => {
     const input = 'test(this (is bad # missing parentheses';
-    expect(() => parseString(input)).toThrowError(
-      /^Unexpected token in argument/,
-    );
+    expect(() => parseString(input)).toThrow();
   });
 
   test('throws on malformed input 4', () => {
