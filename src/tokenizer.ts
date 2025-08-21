@@ -65,49 +65,54 @@ const enum LineState {
   Clear,
   Quote,
   BracketArg,
-  BracketComment
+  BracketComment,
 }
 
 type ClearState = {
   state: LineState.Clear;
-}
+};
 
 type QuoteState = {
-  state: LineState.Quote
-}
+  state: LineState.Quote;
+  backslashCount: number;
+};
 
 type BracketArgState = {
   state: LineState.BracketArg;
   equals: number;
-}
+};
 
 type BracketCommentState = {
   state: LineState.BracketComment;
   equals: number;
-}
-
+};
 
 const TokenStateClear: ClearState = {
-  state: LineState.Clear
+  state: LineState.Clear,
 };
 
-const TokenStateQuote: QuoteState = {
-  state: LineState.Quote
-};
+const TokenStateQuote = (): QuoteState => ({
+  state: LineState.Quote,
+  backslashCount: 0,
+});
 
 const TokenStateBArg = (equals: number): BracketArgState => ({
   state: LineState.BracketArg,
-  equals
+  equals,
 });
 
 const TokenStateBComment = (equals: number): BracketCommentState => ({
   state: LineState.BracketComment,
-  equals
+  equals,
 });
 
-type TokenState = ClearState | QuoteState | BracketArgState | BracketCommentState;
+type TokenState =
+  | ClearState
+  | QuoteState
+  | BracketArgState
+  | BracketCommentState;
 
-type TokenResult = {state: TokenState, linePos: number, curTok: string};
+type TokenResult = { state: TokenState; linePos: number; curTok: string };
 
 export function MakeToken(t: TokenType, v?: string): Token {
   const typ: TokenType = t;
@@ -215,8 +220,8 @@ export function MakeTokenStream(input: string): TokenStream {
     return '';
   }
 
-  const bracketReg = /#\s*\[(?<equals>:=*)\[/;
-  function StartComment(line:string, linePos:number): TokenResult {
+  const bracketReg = /#\s*\[(?<equals>=*)\[/;
+  function StartComment(line: string, linePos: number): TokenResult {
     // Check to see if this comment is just through the end of the line, or if it starts a bracket-comment
 
     const rest = line.substring(linePos);
@@ -226,7 +231,32 @@ export function MakeTokenStream(input: string): TokenStream {
       return { state: TokenStateClear, linePos: line.length, curTok: '' };
     }
     // If it was a bracket comment, we'll just register that we're in that state, and keep slurping
-    return { state: TokenStateBComment(bracketMatch.groups?.equals?.length || 0), linePos: linePos + bracketMatch[0].length, curTok: rest };
+    return {
+      state: TokenStateBComment(bracketMatch.groups?.equals?.length || 0),
+      linePos: linePos + bracketMatch[0].length,
+      curTok: rest,
+    };
+  }
+
+  const bracketArgReg = /\[(?<equals>=*)\]/;
+  function CheckBracketArg(line: string, linePos: number): TokenResult {
+    const rest = line.substring(linePos);
+    const match = rest.match(bracketArgReg);
+    if (match) {
+      const equalsCount = match.groups?.equals?.length || 0;
+      return {
+        state: TokenStateBArg(equalsCount),
+        linePos: linePos + match[0].length,
+        curTok: rest,
+      };
+    }
+    // If no match, this doesn't fit the grammar properly
+    // TODO: There's apparently a crime against humanity lurking here,
+    // where CMake has a custom regex syntax.. Go look at LLVM/llvm/lib/ObjCopyCMakeLists.txt
+    // and figure out how to handle it.
+    throw new Error(
+      `Unrecognized bracket argument syntax at line ${linePos}: ${rest}`,
+    );
   }
 
   function tokenize(input: string): Token[] {
@@ -241,33 +271,28 @@ export function MakeTokenStream(input: string): TokenStream {
             // Normal tokenization state:
             switch (line[linePos]) {
               case '#':
+                // Comments are kind of "out of line" because they're
+                // pretty easy to tokenize, unless they're a bracket comment.
                 curTok = MaybePush(curTok);
-                ({state, linePos, curTok} = StartComment(line, linePos));
+                ({ state, linePos, curTok } = StartComment(line, linePos));
                 continue;
               case '"':
                 curTok = MaybePush(curTok);
-                state = TokenStateQuote;
+                state = TokenStateQuote();
                 curTok += line[linePos];
                 continue;
               case '[':
                 curTok = MaybePush(curTok);
-                state = LineState.BracketArg;
-                curTok += line[linePos];
+                ({ state, linePos, curTok } = CheckBracketArg(line, linePos));
                 continue;
               case '(':
               case ')':
-                if (curTok.length > 0) {
-                  tokens.push(MakeIdentifier(curTok));
-                  curTok = '';
-                }
+                curTok = MaybePush(curTok);
                 tokens.push(MakeParen(line[linePos] as '(' | ')'));
                 continue;
               case ' ':
               case '\t':
-                if (curTok.length > 0) {
-                  tokens.push(MakeIdentifier(curTok));
-                  curTok = '';
-                }
+                curTok = MaybePush(curTok);
                 continue;
               default:
                 curTok += line[linePos];
