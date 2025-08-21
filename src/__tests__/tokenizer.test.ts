@@ -112,8 +112,18 @@ describe('CMake Tokenizer', () => {
   });
 });
 
-describe('(FAILING): Tokenizer tests (all 5 failing)', () => {
+describe('(FAILING): Tokenizer tests (all 6 failing)', () => {
   // Go look at https://cmake.org/cmake/help/latest/manual/cmake-language.7.html for details
+
+  test('quoted comment (fix this now!)', () => {
+    const tokens = MakeTokenStream("message(\"Hello#World\")");
+    expect(tokens.expectIdentifier()).toEqual('message');
+    expect(tokens.expectOpen()).toBeTrue();
+    expect(tokens.expect(TokenType.Quoted, '"Hello#World"')).toBeDefined();
+    expect(tokens.expectClose()).toBeTrue();
+    expect(tokens.expect(TokenType.EOF)).toBeDefined();
+  });
+
   test('escape sequence', () => {
     const tokens = MakeTokenStream('test(SINGLE\\ ARGUMENT\\;HERE)');
     expect(tokens.expectIdentifier()).toEqual('test');
