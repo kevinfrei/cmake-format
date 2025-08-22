@@ -220,14 +220,15 @@ export function MakeTokenStream(input: string): TokenStream {
     return '';
   }
 
-  const bracketReg = /#\s*\[(?<equals>=*)\[/;
+  const bracketCommentRegex = /#\s*\[(?<equals>=*)\[/;
   function StartComment(line: string, linePos: number): TokenResult {
     // Check to see if this comment is just through the end of the line, or if it starts a bracket-comment
 
     const rest = line.substring(linePos);
-    const bracketMatch = rest.match(bracketReg);
+    const bracketMatch = rest.match(bracketCommentRegex);
     if (bracketMatch === null) {
-      tokens.push(MakeComment(rest));
+      const isInline = line.substring(0, linePos).trim().length !== 0;
+      tokens.push(isInline ? MakeInlineComment(rest) : MakeComment(rest));
       return { state: TokenStateClear, linePos: line.length, curTok: '' };
     }
     // If it was a bracket comment, we'll just register that we're in that state, and keep slurping
@@ -238,10 +239,10 @@ export function MakeTokenStream(input: string): TokenStream {
     };
   }
 
-  const bracketArgReg = /\[(?<equals>=*)\]/;
+  const bracketArgRegex = /\[(?<equals>=*)\]/;
   function CheckBracketArg(line: string, linePos: number): TokenResult {
     const rest = line.substring(linePos);
-    const match = rest.match(bracketArgReg);
+    const match = rest.match(bracketArgRegex);
     if (match) {
       const equalsCount = match.groups?.equals?.length || 0;
       return {
@@ -294,9 +295,12 @@ export function MakeTokenStream(input: string): TokenStream {
               case '\t':
                 curTok = MaybePush(curTok);
                 continue;
+              case '$':
+                ({ state, linePos, curTok } = CheckVariable(line, linePos));
+                continue;
               default:
                 curTok += line[linePos];
-                break;
+                continue;
             }
             break;
           case LineState.BracketArg:
@@ -308,67 +312,7 @@ export function MakeTokenStream(input: string): TokenStream {
             continue;
         }
       }
-
-      const commentIndex = line.indexOf('#');
-      const codePart = commentIndex >= 0 ? line.slice(0, commentIndex) : line;
-      // Handle stand-alone
-      if (codePart.trim().length === 0 && commentIndex >= 0) {
-        const comment = line.slice(commentIndex).trim();
-        if (comment.includes('@format-on')) {
-          tokens.push(MakeDirective('@format-on'));
-        } else if (comment.includes('@format-off')) {
-          tokens.push(MakeDirective('@format-off'));
-        } else {
-          tokens.push(MakeComment(comment));
-        }
-        continue;
-      }
-      const commentPart =
-        commentIndex >= 0 ? line.slice(commentIndex).trim() : null;
-
-      let i = 0;
-      while (i < codePart.length) {
-        const c = codePart[i]!;
-        if (/\s/.test(c)) {
-          i++;
-        } else if (c === '(' || c === ')') {
-          tokens.push(MakeParen(c));
-          i++;
-        } else if (c === '"') {
-          let j = i + 1;
-          while (j < codePart.length && codePart[j] !== '"') {
-            j++;
-          }
-          tokens.push(MakeQuoted(codePart.slice(i + 1, j)));
-          i = j + 1;
-        } else if (c === '$' && codePart[i + 1] === '{') {
-          let j = i + 2;
-          while (j < codePart.length && codePart[j] !== '}') {
-            j++;
-          }
-          tokens.push(MakeVariable(codePart.slice(i + 2, j)));
-          i = j + 1;
-        } else {
-          let j = i;
-          while (j < codePart.length && /[^\s()"$]/.test(codePart[j]!)) {
-            j++;
-          }
-          tokens.push(MakeIdentifier(codePart.slice(i, j)));
-          i = j;
-        }
-      }
-
-      if (commentPart) {
-        if (commentPart.includes('@format-on')) {
-          tokens.push(MakeDirective('@format-on'));
-        } else if (commentPart.includes('@format-off')) {
-          tokens.push(MakeDirective('@format-off'));
-        } else {
-          tokens.push(MakeInlineComment(commentPart));
-        }
-      }
     }
-
     tokens.push(MakeEOF());
     return tokens;
   }
