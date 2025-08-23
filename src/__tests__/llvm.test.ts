@@ -11,7 +11,7 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
     expect(true).toBeTrue();
     return;
   }
-/*
+  /*
   if (!isUndefined(llvmPath)) {
     expect(true).toBeTrue();
     return;
@@ -62,11 +62,14 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
     }
   }
   if (failures.length > 0) {
-    const failureRate = (failures.length / (success + failures.length) * 100).toFixed(2);
+    const failureRate = (
+      (failures.length / (success + failures.length)) *
+      100
+    ).toFixed(2);
     throw new Error(
       `Failed to process files:\n--> ${failures.join('\n--> ')}\n` +
-      `Successfully processed files: ${success} out of ${success + failures.length} total.\n` +
-      `Failure rate: ${failureRate}%`
+        `Processed files: Failed ${failures.length} out of ${success + failures.length} total.\n` +
+        `Failure rate: ${failureRate}%`,
     );
   }
 });

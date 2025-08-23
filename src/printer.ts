@@ -7,6 +7,7 @@ import {
   type MacroDefinition,
   type Statement,
 } from './parser';
+import type { TokenStream } from './tokenizer';
 
 function indent(lines: string[], level: number): string[] {
   const pad = '  '.repeat(level);

@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { printFile } from './test-helpers';
+import {
+  compareTokenStreams,
+  printFile,
+  printString,
+  tokenizeFile,
+  tokenizeString,
+} from './test-helpers';
 
 describe('Pretty Printer', () => {
   test('prints basic command', () => {
@@ -26,25 +32,40 @@ describe('Pretty Printer', () => {
   });
 });
 
-describe('Just printing files', () => {
+describe('Token Stream preservation', () => {
   test('read cassette', () => {
-    const output3 = printFile('lotsa-files/cassette.cmake');
-    expect(output3).toBeDefined();
+    const [tokens, rawStrings] = tokenizeFile('cassette.cmake');
+    const output = printString(rawStrings.join('\n'));
+    expect(output).toBeDefined();
+    const [printedTokens] = tokenizeString(output);
+    expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
   });
   test('read cassette-cpp', () => {
-    const output5 = printFile('lotsa-files/cassette-cpp.cmake');
-    expect(output5).toBeDefined();
+    const [tokens, rawStrings] = tokenizeFile('cassette-cpp.cmake');
+    const output = printString(rawStrings.join('\n'));
+    expect(output).toBeDefined();
+    const [printedTokens] = tokenizeString(output);
+    expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
   });
   test('read cassette-cpp-musicdb', () => {
-    const output1 = printFile('lotsa-files/cassette-cpp-musicdb.cmake');
-    expect(output1).toBeDefined();
+    const [tokens, rawStrings] = tokenizeFile('cassette-cpp-musicdb.cmake');
+    const output = printString(rawStrings.join('\n'));
+    expect(output).toBeDefined();
+    const [printedTokens] = tokenizeString(output);
+    expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
   });
   test('read cassette-cpp-test', () => {
-    const output4 = printFile('lotsa-files/cassette-cpp-test.cmake');
-    expect(output4).toBeDefined();
+    const [tokens, rawStrings] = tokenizeFile('cassette-cpp-test.cmake');
+    const output = printString(rawStrings.join('\n'));
+    expect(output).toBeDefined();
+    const [printedTokens] = tokenizeString(output);
+    expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
   });
   test('read cassette-cpp-tools', () => {
-    const output2 = printFile('lotsa-files/cassette-cpp-tools.cmake');
-    expect(output2).toBeDefined();
+    const [tokens, rawStrings] = tokenizeFile('cassette-cpp-tools.cmake');
+    const output = printString(rawStrings.join('\n'));
+    expect(output).toBeDefined();
+    const [printedTokens] = tokenizeString(output);
+    expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
   });
 });

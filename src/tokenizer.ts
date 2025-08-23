@@ -200,7 +200,15 @@ export function MakeEOF(): Token {
 
 export function MakeTokenStream(input: string): TokenStream {
   const tokens: Token[] = [];
+  const posMap: { line: number; column: number }[] = [];
   let curPos = 0;
+  let lineNumber = 0;
+  let linePos = 0;
+
+  function pushToken(token: Token) {
+    tokens.push(token);
+    posMap.push({ line: lineNumber, column: linePos });
+  }
 
   function history(num: number): Token[] {
     return tokens.slice(Math.max(0, curPos - num), curPos);
@@ -224,7 +232,7 @@ export function MakeTokenStream(input: string): TokenStream {
       return token;
     }
     throw new Error(
-      `Expected\n\tToken(${type}${value ? `, ${value}` : ''})\ngot\n\t${token}`,
+      `Expected\n\tToken(${type}${value ? `, ${value}` : ''})\ngot\n\t${token} at roughly line ${posMap[curPos - 1]?.line}, column ${posMap[curPos - 1]?.column}`,
     );
   }
 
@@ -234,7 +242,7 @@ export function MakeTokenStream(input: string): TokenStream {
 
   function MaybePush(curToken: string): string {
     if (curToken.length > 0) {
-      tokens.push(MakeIdentifier(curToken));
+      pushToken(MakeIdentifier(curToken));
     }
     return '';
   }
@@ -275,16 +283,16 @@ export function MakeTokenStream(input: string): TokenStream {
       const isInline = line.substring(0, linePos).trim().length !== 0;
       const comment = line.substring(linePos);
       if (isInline) {
-        tokens.push(MakeInlineComment(comment));
+        pushToken(MakeInlineComment(comment));
       } else {
         const trimmed = comment.substring(1).trim();
         if (
           trimmed.startsWith('@format-on') ||
           trimmed.startsWith('@format-off')
         ) {
-          tokens.push(MakeDirective(trimmed));
+          pushToken(MakeDirective(trimmed));
         } else {
-          tokens.push(MakeComment(comment));
+          pushToken(MakeComment(comment));
         }
       }
       return { state: TokenStateClear, linePos: line.length, curTok: '' };
@@ -331,9 +339,9 @@ export function MakeTokenStream(input: string): TokenStream {
     if (equalCount === curState.equals) {
       // We've closed the bracketed argument/comment
       if (curState.state === LineState.BracketComment) {
-        tokens.push(MakeComment(curTok + line.substring(linePos, newPos + 1)));
+        pushToken(MakeComment(curTok + line.substring(linePos, newPos + 1)));
       } /* if (curState.state === LineState.BracketArg) */ else {
-        tokens.push(
+        pushToken(
           MakeBracket(
             curTok + line.substring(linePos, newPos - 1 - equalCount),
             curState.equals,
@@ -358,9 +366,9 @@ export function MakeTokenStream(input: string): TokenStream {
     const lines = input.split(/\r?\n/);
     let state: TokenState = TokenStateClear;
     let curTok = '';
-    for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
+    for (lineNumber = 0; lineNumber < lines.length; lineNumber++) {
       const line = lines[lineNumber]!;
-      for (let linePos = 0; linePos < line.length; linePos++) {
+      for (linePos = 0; linePos < line.length; linePos++) {
         switch (state.state) {
           case LineState.Clear:
             // Normal tokenization state:
@@ -387,7 +395,7 @@ export function MakeTokenStream(input: string): TokenStream {
               case '(':
               case ')':
                 curTok = MaybePush(curTok);
-                tokens.push(MakeParen(line[linePos] as '(' | ')'));
+                pushToken(MakeParen(line[linePos] as '(' | ')'));
                 continue;
               case '\\':
                 curTok += '\\';
@@ -425,7 +433,7 @@ export function MakeTokenStream(input: string): TokenStream {
               curTok += '\n';
             }
             if (line[linePos] === '"') {
-              tokens.push(MakeQuoted(curTok));
+              pushToken(MakeQuoted(curTok));
               curTok = '';
               state = TokenStateClear;
             } else if (line[linePos] === '\\') {
@@ -441,7 +449,7 @@ export function MakeTokenStream(input: string): TokenStream {
         }
       }
     }
-    tokens.push(MakeEOF());
+    pushToken(MakeEOF());
     return tokens;
   }
 

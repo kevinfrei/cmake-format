@@ -44,3 +44,20 @@ export function printFile(filePath: string): string {
 export function printFullFile(path: string): string[] {
   return printCMake(parseString(readFileSync(path, 'utf-8')));
 }
+
+export function compareTokenStreams(
+  streamA: TokenStream,
+  streamB: TokenStream,
+): boolean {
+  if (streamA.count() !== streamB.count()) {
+    return false;
+  }
+  for (let i = 0; i < streamA.count(); i++) {
+    const tokenA = streamA.consume();
+    const tokenB = streamB.consume();
+    if (tokenA.type !== tokenB.type || tokenA.value !== tokenB.value) {
+      return false;
+    }
+  }
+  return true;
+}
