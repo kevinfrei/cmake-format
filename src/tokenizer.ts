@@ -10,6 +10,7 @@ export enum NumberedTokenType {
   Bracketed, // = 'bracketed',
   Variable, // = 'variable',
   Paren, // = 'paren',
+  Curly, // = 'curly',
   Comment, // = 'comment',
   TailComment, // = 'tail_comment',
   Directive, // = 'directive',
@@ -22,6 +23,7 @@ export enum TokenType {
   Bracketed = 'bracketed',
   Variable = 'variable',
   Paren = 'paren',
+  Curly = 'curly',
   Comment = 'comment',
   TailComment = 'tail_comment',
   Directive = 'directive',
@@ -40,25 +42,34 @@ export type Position = { pos: TxtPos };
 export type Directives = '@format-on' | '@format-off';
 
 export type Token = {
+  readonly type: TokenType;
+  readonly value: string | undefined;
   is: (type: TokenType, val?: string) => boolean;
   isOpenParen: () => boolean;
   isCloseParen: () => boolean;
+  /*
+    isOpenCurly: () => boolean;
+    isCloseCurly: () => boolean;
+  */
   isComment: () => boolean;
   isIdentifier: (val?: string | string[]) => boolean;
   toString: () => string;
-  type: () => TokenType;
-  value: () => string | undefined;
 };
 
 export type TokenStream = {
+  readonly tokens: Token[];
   peek: () => Token;
   consume: () => Token;
-  expect: (type: TokenType, value?: string) => Token;
-  expectIdentifier: () => string;
-  expectOpen: () => boolean;
-  expectClose: () => boolean;
   count: () => number;
   history: (num: number) => Token[];
+  expect: (type: TokenType, value?: string) => Token;
+  expectIdentifier: () => string;
+  expectOpenParen: () => boolean;
+  expectCloseParen: () => boolean;
+  /*
+    expectOpenCurly: () => boolean;
+    expectCloseCurly: () => boolean;
+  */
 };
 
 const enum LineState {
@@ -115,31 +126,35 @@ type TokenState =
 type TokenResult = { state: TokenState; linePos: number; curTok: string };
 
 export function MakeToken(t: TokenType, v?: string): Token {
-  const typ: TokenType = t;
-  const val: string | undefined = v;
+  const type: TokenType = t;
+  const value: string | undefined = v;
   return {
+    type,
+    value,
     is: (t: TokenType, v?: string) =>
-      t === typ && (isUndefined(v) || v === val),
+      t === type && (isUndefined(v) || v === value),
     isIdentifier: (v?: string | string[]) => {
-      if (typ !== TokenType.Identifier) {
+      if (type !== TokenType.Identifier) {
         return false;
       } else if (isUndefined(v)) {
         return true;
       } else if (isString(v)) {
-        return v === val;
+        return v === value;
       } else {
-        return !isUndefined(val) && v.includes(val);
+        return !isUndefined(value) && v.includes(value);
       }
     },
-    isOpenParen: () => typ === TokenType.Paren && val === '(',
-    isCloseParen: () => typ === TokenType.Paren && val === ')',
+    isOpenParen: () => type === TokenType.Paren && value === '(',
+    isCloseParen: () => type === TokenType.Paren && value === ')',
+    /*
+        isOpenCurly: () => type === TokenType.Curly && value === '{',
+        isCloseCurly: () => type === TokenType.Curly && value === '}',
+    */
     isComment: () =>
-      typ === TokenType.Comment ||
-      typ === TokenType.TailComment ||
-      typ === TokenType.Directive,
-    toString: () => `Token(${typ}${isUndefined(val) ? '' : `, ${val}`})`,
-    type: () => typ,
-    value: () => val,
+      type === TokenType.Comment ||
+      type === TokenType.TailComment ||
+      type === TokenType.Directive,
+    toString: () => `Token(${type}${isUndefined(value) ? '' : `, ${value}`})`,
   };
 }
 
@@ -147,12 +162,16 @@ export function MakeParen(value: '(' | ')'): Token {
   return MakeToken(TokenType.Paren, value);
 }
 
+export function MakeCurly(value: '{' | '}'): Token {
+  return MakeToken(TokenType.Curly, value);
+}
+
 export function MakeQuoted(value: string): Token {
   return MakeToken(TokenType.Quoted, value);
 }
 
 export function MakeBracket(value: string, qty: number): Token {
-  return MakeToken(TokenType.Bracketed, value);
+  return MakeToken(TokenType.Bracketed, `${qty}:${value}`);
 }
 
 export function MakeVariable(value: string): Token {
@@ -163,7 +182,7 @@ export function MakeIdentifier(value: string): Token {
   return MakeToken(TokenType.Identifier, value);
 }
 
-export function MakeDirective(value: Directives): Token {
+export function MakeDirective(value: string): Token {
   return MakeToken(TokenType.Directive, value);
 }
 
@@ -210,7 +229,7 @@ export function MakeTokenStream(input: string): TokenStream {
   }
 
   function expectIdentifier(): string {
-    return expect(TokenType.Identifier).value()!;
+    return expect(TokenType.Identifier).value!;
   }
 
   function MaybePush(curToken: string): string {
@@ -220,52 +239,127 @@ export function MakeTokenStream(input: string): TokenStream {
     return '';
   }
 
-  const bracketCommentRegex = /#\s*\[(?<equals>=*)\[/;
+  // Match the pattern ' ]*=*]'
+  function equalBracket(
+    line: string,
+    linePos: number,
+    bracket: string,
+    skipSpace: boolean = false,
+  ): [number, number] {
+    let count = 0;
+    while (
+      skipSpace &&
+      linePos < line.length &&
+      (line[linePos] === ' ' || line[linePos] === '\t')
+    ) {
+      linePos++;
+    }
+    if (linePos >= line.length || line[linePos] !== bracket) {
+      return [-1, -1];
+    }
+    linePos++;
+    while (linePos < line.length && line[linePos] === '=') {
+      count++;
+      linePos++;
+    }
+    if (linePos < line.length && line[linePos] === bracket) {
+      return [count, linePos];
+    }
+    return [-1, -1];
+  }
+
   function StartComment(line: string, linePos: number): TokenResult {
     // Check to see if this comment is just through the end of the line, or if it starts a bracket-comment
-
-    const rest = line.substring(linePos);
-    const bracketMatch = rest.match(bracketCommentRegex);
-    if (bracketMatch === null) {
+    const [equalCount, newPos] = equalBracket(line, linePos + 1, '[', true);
+    if (equalCount === -1) {
       const isInline = line.substring(0, linePos).trim().length !== 0;
-      tokens.push(isInline ? MakeInlineComment(rest) : MakeComment(rest));
+      const comment = line.substring(linePos);
+      if (isInline) {
+        tokens.push(MakeInlineComment(comment));
+      } else {
+        const trimmed = comment.substring(1).trim();
+        if (
+          trimmed.startsWith('@format-on') ||
+          trimmed.startsWith('@format-off')
+        ) {
+          tokens.push(MakeDirective(trimmed));
+        } else {
+          tokens.push(MakeComment(comment));
+        }
+      }
       return { state: TokenStateClear, linePos: line.length, curTok: '' };
     }
     // If it was a bracket comment, we'll just register that we're in that state, and keep slurping
     return {
-      state: TokenStateBComment(bracketMatch.groups?.equals?.length || 0),
-      linePos: linePos + bracketMatch[0].length,
-      curTok: rest,
+      state: TokenStateBComment(equalCount),
+      linePos: newPos,
+      curTok: line.substring(linePos, newPos + 1),
     };
   }
 
-  const bracketArgRegex = /\[(?<equals>=*)\]/;
-  function CheckBracketArg(line: string, linePos: number): TokenResult {
-    const rest = line.substring(linePos);
-    const match = rest.match(bracketArgRegex);
-    if (match) {
-      const equalsCount = match.groups?.equals?.length || 0;
+  function CheckBracketArg(
+    line: string,
+    linePos: number,
+    curTok: string,
+  ): TokenResult {
+    const [equalCount, newPos] = equalBracket(line, linePos, '[', false);
+    if (equalCount === -1) {
+      // If no match, this doesn't fit the grammar properly
+      // TODO: There's apparently a crime against humanity lurking here,
+      // where CMake has a custom regex syntax.. Go look at LLVM/llvm/lib/ObjCopyCMakeLists.txt
+      // and figure out how to handle it.
       return {
-        state: TokenStateBArg(equalsCount),
-        linePos: linePos + match[0].length,
-        curTok: rest,
+        state: TokenStateClear,
+        linePos,
+        curTok: curTok + line[linePos],
       };
     }
-    // If no match, this doesn't fit the grammar properly
-    // TODO: There's apparently a crime against humanity lurking here,
-    // where CMake has a custom regex syntax.. Go look at LLVM/llvm/lib/ObjCopyCMakeLists.txt
-    // and figure out how to handle it.
-    throw new Error(
-      `Unrecognized bracket argument syntax at line ${linePos}: ${rest}`,
-    );
+    return {
+      state: TokenStateBArg(equalCount),
+      linePos: newPos,
+      curTok: '',
+    };
+  }
+
+  function CheckEndBracket(
+    curState: BracketArgState | BracketCommentState,
+    line: string,
+    linePos: number,
+    curTok: string,
+  ): TokenResult {
+    const [equalCount, newPos] = equalBracket(line, linePos, ']', false);
+    if (equalCount === curState.equals) {
+      // We've closed the bracketed argument/comment
+      if (curState.state === LineState.BracketComment) {
+        tokens.push(MakeComment(curTok + line.substring(linePos, newPos + 1)));
+      } /* if (curState.state === LineState.BracketArg) */ else {
+        tokens.push(
+          MakeBracket(
+            curTok + line.substring(linePos, newPos - 1 - equalCount),
+            curState.equals,
+          ),
+        );
+      }
+      return {
+        state: TokenStateClear,
+        linePos: newPos,
+        curTok: '',
+      };
+    }
+    // If no match, this doesn't fit the grammar properly, keep accumulating characters
+    return {
+      state: curState,
+      linePos,
+      curTok: curTok + ']',
+    };
   }
 
   function tokenize(input: string): Token[] {
     const lines = input.split(/\r?\n/);
     let state: TokenState = TokenStateClear;
+    let curTok = '';
     for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
       const line = lines[lineNumber]!;
-      let curTok = '';
       for (let linePos = 0; linePos < line.length; linePos++) {
         switch (state.state) {
           case LineState.Clear:
@@ -280,35 +374,69 @@ export function MakeTokenStream(input: string): TokenStream {
               case '"':
                 curTok = MaybePush(curTok);
                 state = TokenStateQuote();
-                curTok += line[linePos];
+                curTok = '';
                 continue;
               case '[':
                 curTok = MaybePush(curTok);
-                ({ state, linePos, curTok } = CheckBracketArg(line, linePos));
+                ({ state, linePos, curTok } = CheckBracketArg(
+                  line,
+                  linePos,
+                  curTok,
+                ));
                 continue;
               case '(':
               case ')':
                 curTok = MaybePush(curTok);
                 tokens.push(MakeParen(line[linePos] as '(' | ')'));
                 continue;
+              case '\\':
+                curTok += '\\';
+                if (linePos + 1 < line.length) {
+                  curTok += line[linePos + 1];
+                  linePos++;
+                }
+                continue;
               case ' ':
               case '\t':
                 curTok = MaybePush(curTok);
-                continue;
-              case '$':
-                ({ state, linePos, curTok } = CheckVariable(line, linePos));
                 continue;
               default:
                 curTok += line[linePos];
                 continue;
             }
-            break;
           case LineState.BracketArg:
           case LineState.BracketComment:
+            if (linePos === 0) {
+              curTok += '\n';
+            }
+            if (line[linePos] === ']') {
+              ({ state, linePos, curTok } = CheckEndBracket(
+                state,
+                line,
+                linePos,
+                curTok,
+              ));
+            } else {
+              curTok += line[linePos];
+            }
+            continue;
           case LineState.Quote:
-            // In these states, the entire line is considered part of the argument/comment/string
-            tokens.push(MakeBracket(line, 2));
-            state = TokenState.Clear;
+            if (linePos === 0) {
+              curTok += '\n';
+            }
+            if (line[linePos] === '"') {
+              tokens.push(MakeQuoted(curTok));
+              curTok = '';
+              state = TokenStateClear;
+            } else if (line[linePos] === '\\') {
+              curTok += '\\';
+              if (linePos + 1 < line.length) {
+                curTok += line[linePos + 1];
+                linePos++;
+              }
+            } else {
+              curTok += line[linePos];
+            }
             continue;
         }
       }
@@ -319,12 +447,13 @@ export function MakeTokenStream(input: string): TokenStream {
 
   tokenize(input);
   return {
+    tokens,
     peek,
     consume,
     expect,
     expectIdentifier,
-    expectOpen: () => expect(TokenType.Paren, '(').isOpenParen(),
-    expectClose: () => expect(TokenType.Paren, ')').isCloseParen(),
+    expectOpenParen: () => expect(TokenType.Paren, '(').isOpenParen(),
+    expectCloseParen: () => expect(TokenType.Paren, ')').isCloseParen(),
     history,
     count: () => tokens.length,
   };
