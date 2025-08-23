@@ -66,8 +66,9 @@ export function compareTokenStreams(
   return true;
 }
 
-export function compareTokens(filename: string): boolean {
-  const [streamA, content] = tokenizeTestFile(filename);
-  const [streamB, __] = printString(content.join('\n'));
+export function compareTokensFile(filename: string): boolean {
+  const content = loadFile(filename);
+  const [streamA, ] = tokenizeString(content);
+  const [streamB, ] = tokenizeString(printString(content));
   return compareTokenStreams(streamA, streamB);
 }

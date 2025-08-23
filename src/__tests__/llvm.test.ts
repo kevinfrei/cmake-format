@@ -2,7 +2,7 @@ import { isUndefined } from '@freik/typechk';
 import { expect, test } from 'bun:test';
 import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
-import { llvmRepoExists, printFullFile } from './test-helpers';
+import { compareTokensFile, llvmRepoExists, printFullFile } from './test-helpers';
 
 test('(FAILING): Try to process all the LLVM CMake files', async () => {
   // If there's an LLVM repo one up from here, go ahead and read it's .cmake files
@@ -49,13 +49,20 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
   // Example usage
   const cmakeFiles = findCMakeFiles(llvmPath); // or any root directory
   const failures: string[] = [];
+  const printFailures: string[] = [];
   let success = 0;
+  let printSuccess = 0;
   for (const path of cmakeFiles) {
     console.log(path);
     try {
       const printed = printFullFile(path);
       expect(printed.length).toBeGreaterThan(0);
       success++;
+      if (compareTokensFile(path)){
+        printSuccess++;
+      } else {
+        printFailures.push(path);
+      }
     } catch (error) {
       console.error(`Error processing file ${path}:`, error);
       failures.push(path);
@@ -69,7 +76,8 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
     throw new Error(
       `Failed to process files:\n--> ${failures.join('\n--> ')}\n` +
         `Processed files: Failed ${failures.length} out of ${success + failures.length} total.\n` +
-        `Failure rate: ${failureRate}%`,
+        `Failure rate: ${failureRate}%\n` +
+        `Print failures: ${printFailures.length} out of ${success} total\n==> ${printFailures.join('\n==> ')}`,
     );
   }
 });
