@@ -11,7 +11,12 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
     expect(true).toBeTrue();
     return;
   }
-
+/*
+  if (!isUndefined(llvmPath)) {
+    expect(true).toBeTrue();
+    return;
+  }
+*/
   // Match files named "CMakeLists.txt" or ending in ".cmake"
   function isCMakeFile(filename: string): boolean {
     return (

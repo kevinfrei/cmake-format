@@ -166,7 +166,7 @@ function collectLeadingComments(
 ): string[] {
   const comments: string[] = [];
   while (tokens.peek().isComment()) {
-    const comment: string = tokens.consume().value()!;
+    const comment: string = tokens.consume().value!;
     comments.push(comment);
 
     if (comment.includes('@format-off')) {
@@ -185,7 +185,7 @@ function parseStatement(tokens: TokenStream, state: ParserState): Statement {
     throw new Error(`Expected statement, got ${next}`);
   }
   let stmt: Statement;
-  switch (next.value()) {
+  switch (next.value) {
     case 'if':
       stmt = parseConditionalBlock(tokens, state);
       break;
@@ -197,16 +197,16 @@ function parseStatement(tokens: TokenStream, state: ParserState): Statement {
       break;
   }
   if (tokens.peek().is(TokenType.TailComment)) {
-    stmt.trailingComment = tokens.consume().value();
+    stmt.trailingComment = tokens.consume().value!;
   }
   return { ...stmt, leadingComments };
 }
 
 function parseCommandInvocation(tokens: TokenStream): CommandInvocation {
   const name = tokens.expectIdentifier();
-  tokens.expectOpen();
+  tokens.expectOpenParen();
   const args = parseArguments(tokens);
-  tokens.expectClose();
+  tokens.expectCloseParen();
   return mkCommandInvocation(name, args);
 }
 
@@ -220,13 +220,13 @@ function parseArguments(tokens: TokenStream): Argument[] {
 
 function parseArgument(tokens: TokenStream): Argument {
   const token = tokens.consume();
-  switch (token.type()) {
+  switch (token.type) {
     case TokenType.Quoted:
-      return mkQuotedString(token.value()!);
+      return mkQuotedString(token.value!);
     case TokenType.Identifier:
-      return mkUnquotedString(token.value()!);
+      return mkUnquotedString(token.value!);
     case TokenType.Variable:
-      return mkVariableReference(token.value()!);
+      return mkVariableReference(token.value!);
     default:
       const prev = tokens.history(10);
       const val = prev.map((t) => t.toString()).join(' * ');
@@ -239,9 +239,9 @@ function parseConditionalBlock(
   state: ParserState,
 ): ConditionalBlock {
   tokens.expectIdentifier(); // "if"
-  tokens.expectOpen();
+  tokens.expectOpenParen();
   const condition = parseArguments(tokens);
-  tokens.expectClose();
+  tokens.expectCloseParen();
 
   const body: Statement[] = [];
   const elseifBlocks: ElseIfBlock[] = [];
@@ -252,7 +252,7 @@ function parseConditionalBlock(
     const next = tokens.peek();
     if (!next.isIdentifier()) break;
 
-    switch (next.value()) {
+    switch (next.value) {
       case 'elseif':
         elseifBlocks.push({
           ...parseElseIfBlock(tokens, state),
@@ -264,8 +264,8 @@ function parseConditionalBlock(
         break;
       case 'endif':
         tokens.expectIdentifier(); // "endif"
-        tokens.expectOpen();
-        tokens.expectClose();
+        tokens.expectOpenParen();
+        tokens.expectCloseParen();
         return {
           ...mkConditionalBlock(condition, body, elseifBlocks, elseBlock),
           leadingComments,
@@ -283,9 +283,9 @@ function parseElseIfBlock(
   state: ParserState,
 ): ElseIfBlock {
   tokens.expectIdentifier(); // "elseif"
-  tokens.expectOpen();
+  tokens.expectOpenParen();
   const condition = parseArguments(tokens);
-  tokens.expectClose();
+  tokens.expectCloseParen();
 
   const body: Statement[] = [];
   while (!tokens.peek().isIdentifier(['elseif', 'else', 'endif'])) {
@@ -297,8 +297,8 @@ function parseElseIfBlock(
 
 function parseElseBlock(tokens: TokenStream, state: ParserState): ElseBlock {
   tokens.expectIdentifier(); // "else"
-  tokens.expectOpen();
-  tokens.expectClose();
+  tokens.expectOpenParen();
+  tokens.expectCloseParen();
 
   const body: Statement[] = [];
   while (!tokens.peek().isIdentifier('endif')) {
@@ -313,7 +313,7 @@ function parseMacroDefinition(
   state: ParserState,
 ): MacroDefinition {
   tokens.expectIdentifier(); // "macro"
-  tokens.expectOpen();
+  tokens.expectOpenParen();
   const name = tokens.expectIdentifier();
   const params: string[] = [];
 
@@ -321,7 +321,7 @@ function parseMacroDefinition(
     params.push(tokens.expectIdentifier());
   }
 
-  tokens.expectClose();
+  tokens.expectCloseParen();
 
   const body: Statement[] = [];
   while (!tokens.peek().isIdentifier('endmacro')) {
@@ -329,8 +329,8 @@ function parseMacroDefinition(
   }
 
   tokens.expectIdentifier(); // "endmacro"
-  tokens.expectOpen();
-  tokens.expectClose();
+  tokens.expectOpenParen();
+  tokens.expectCloseParen();
 
   return mkMacroDefinition(name, params, body);
 }
