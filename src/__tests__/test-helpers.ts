@@ -5,8 +5,12 @@ import { parseCMakeFile } from '../parser';
 import { printCMake } from '../printer';
 import { MakeTokenStream, type TokenStream } from '../tokenizer';
 
-export function loadFile(name: string): string {
-  return readFileSync(join(import.meta.dir, 'inputs', name), 'utf-8').trim();
+export function getTestFileName(name: string): string {
+  return join(import.meta.dir, 'inputs', name);
+}
+
+function loadFile(name: string): string {
+  return readFileSync(name, 'utf-8').trim();
 }
 
 export function llvmRepoExists(): string | undefined {
@@ -19,12 +23,12 @@ export function tokenizeString(content: string): [TokenStream, string[]] {
   return [MakeTokenStream(content), content.split('\n')];
 }
 
-export function tokenizeFile(filePath: string): [TokenStream, string[]] {
-  return tokenizeString(loadFile(filePath));
+export function tokenizeTestFile(filePath: string): [TokenStream, string[]] {
+  return tokenizeString(loadFile(getTestFileName(filePath)));
 }
 
-export function parseFile(filename: string): CMakeFile {
-  const [tokens, input] = tokenizeFile(filename);
+export function parseTestFile(filename: string): CMakeFile {
+  const [tokens, input] = tokenizeTestFile(filename);
   return parseCMakeFile(tokens, input);
 }
 
@@ -37,8 +41,8 @@ export function printString(content: string): string {
   return printCMake(parseString(content)).join('\n');
 }
 
-export function printFile(filePath: string): string {
-  return printCMake(parseFile(filePath)).join('\n');
+export function printTestFile(filePath: string): string {
+  return printCMake(parseTestFile(filePath)).join('\n');
 }
 
 export function printFullFile(path: string): string[] {
@@ -60,4 +64,10 @@ export function compareTokenStreams(
     }
   }
   return true;
+}
+
+export function compareTokens(filename: string): boolean {
+  const [streamA, content] = tokenizeTestFile(filename);
+  const [streamB, __] = printString(content.join('\n'));
+  return compareTokenStreams(streamA, streamB);
 }
