@@ -1,7 +1,6 @@
 // Tokenizer types
 
 import { isString, isUndefined } from '@freik/typechk';
-import { start } from 'repl';
 
 // This should be faster, but the strings make it more debuggable
 export enum NumberedTokenType {

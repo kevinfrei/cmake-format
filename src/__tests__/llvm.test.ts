@@ -2,7 +2,11 @@ import { isUndefined } from '@freik/typechk';
 import { expect, test } from 'bun:test';
 import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
-import { compareTokensFile, llvmRepoExists, printFullFile } from './test-helpers';
+import {
+  compareTokensFile,
+  llvmRepoExists,
+  printFullFile,
+} from './test-helpers';
 
 test('(FAILING): Try to process all the LLVM CMake files', async () => {
   // If there's an LLVM repo one up from here, go ahead and read it's .cmake files
@@ -58,7 +62,7 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
       const printed = printFullFile(path);
       expect(printed.length).toBeGreaterThan(0);
       success++;
-      if (compareTokensFile(path)){
+      if (compareTokensFile(path)) {
         printSuccess++;
       } else {
         printFailures.push(path);
@@ -73,11 +77,31 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
       (failures.length / (success + failures.length)) *
       100
     ).toFixed(2);
-    throw new Error(
-      `Failed to process files:\n--> ${failures.join('\n--> ')}\n` +
-        `Processed files: Failed ${failures.length} out of ${success + failures.length} total.\n` +
-        `Failure rate: ${failureRate}%\n` +
-        `Print failures: ${printFailures.length} out of ${success} total\n==> ${printFailures.join('\n==> ')}`,
-    );
+    throw new Error(`Failed to process files:
+--> ${failures.join('\n--> ')}
+Processed files: Failed ${failures.length} out of ${success + failures.length} total.
+Failure rate: ${failureRate}%
+Print failures: ${printFailures.length} out of ${success} total
+==> ${printFailures.join('\n==> ')}`);
   }
 });
+
+/* Printed files tokenize differently as of 8AM PDT 23 Aug 2025:
+
+llvm/clang/examples/LLVMPrintFunctionNames/CMakeLists.txt
+llvm/clang/examples/PrintFunctionNames/CMakeLists.txt
+llvm/compiler-rt/lib/orc/CMakeLists.txt
+llvm/compiler-rt/lib/xray/CMakeLists.txt
+llvm/compiler-rt/test/CMakeLists.txt
+llvm/flang/runtime/Float128Math/CMakeLists.txt
+llvm/flang/tools/flang-driver/CMakeLists.txt
+llvm/libcxx/cmake/Modules/HandleLibC.cmake
+llvm/libcxx/cmake/Modules/HandleLibCXXABI.cmake
+llvm/lld/CMakeLists.txt
+llvm/openmp/runtime/cmake/LibompHandleFlags.cmake
+llvm/openmp/runtime/cmake/LibompMicroTests.cmake
+llvm/polly/unittests/CMakeLists.txt
+
+(With 217 failures to just tokenize the original)
+
+*/
