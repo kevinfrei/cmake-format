@@ -48,9 +48,25 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
   expect(bolt.length).toBeGreaterThan(0);
   // Example usage
   const cmakeFiles = findCMakeFiles(llvmPath); // or any root directory
+  const failures: string[] = [];
+  let success = 0;
   for (const path of cmakeFiles) {
     console.log(path);
-    const printed = printFullFile(path);
-    expect(printed.length).toBeGreaterThan(0);
+    try {
+      const printed = printFullFile(path);
+      expect(printed.length).toBeGreaterThan(0);
+      success++;
+    } catch (error) {
+      console.error(`Error processing file ${path}:`, error);
+      failures.push(path);
+    }
+  }
+  if (failures.length > 0) {
+    const failureRate = (failures.length / (success + failures.length) * 100).toFixed(2);
+    throw new Error(
+      `Failed to process files:\n--> ${failures.join('\n--> ')}\n` +
+      `Successfully processed files: ${success} out of ${success + failures.length} total.\n` +
+      `Failure rate: ${failureRate}%`
+    );
   }
 });
