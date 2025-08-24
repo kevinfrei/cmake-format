@@ -98,6 +98,7 @@ export type MacroDefinition = {
   name: string;
   params: string[];
   body: Statement[];
+  endMacroArgs?: string[];
   startTailComment?: string;
   endTailComment?: string;
 };
@@ -208,6 +209,7 @@ export function mkMacroDefinition(
   name: string,
   params: string[],
   body: Statement[],
+  endMacroArgs?: string[],
   startTailComment?: string,
   endTailComment?: string,
 ): MacroDefinition {
@@ -216,6 +218,7 @@ export function mkMacroDefinition(
     name,
     params,
     body,
+    endMacroArgs,
     startTailComment,
     endTailComment,
   };
@@ -425,6 +428,10 @@ function parseMacroDefinition(
 
   tokens.expectIdentifier(); // "endmacro"
   tokens.expectOpenParen();
+  const endMacroParams: string[] = [];
+  while (tokens.peek().isIdentifier()) {
+    endMacroParams.push(tokens.expectIdentifier());
+  }
   tokens.expectCloseParen();
   const endTailComment = chkTail(tokens);
 
@@ -432,6 +439,7 @@ function parseMacroDefinition(
     name,
     params,
     body,
+    endMacroParams,
     startTailComment,
     endTailComment,
   );

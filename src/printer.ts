@@ -115,7 +115,7 @@ function printMacroDefinition(
     `${'  '.repeat(level)}macro(${mac.name} ${mac.params.join(' ')}) ${mac.startTailComment || ''}`,
   );
   mac.body.map((s) => printStatement(s, level + 1, lines));
-  lines.push(`${'  '.repeat(level)}endmacro() ${mac.endTailComment || ''}`);
+  lines.push(`${'  '.repeat(level)}endmacro(${mac.endMacroArgs?.join(' ') || ''}) ${mac.endTailComment || ''}`);
 }
 
 function printStatement(stmt: Statement, level: number, lines: string[]): void {

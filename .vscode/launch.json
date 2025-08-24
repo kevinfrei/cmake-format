@@ -20,7 +20,7 @@
       "request": "launch",
       "name": "Run specific file",
       "program": "${workspaceFolder}/index.ts",
-      "args": ["${workspaceFolder}/../llvm/clang/CMakeLists.txt"],
+      "args": ["${workspaceFolder}/../llvm/mlir/examples/toy/CMakeLists.txt"],
       "cwd": "${workspaceFolder}",
       "stopOnEntry": true,
       "watchMode": false
