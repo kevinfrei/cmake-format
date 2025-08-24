@@ -13,6 +13,17 @@
       "cwd": "${workspaceFolder}",
       "stopOnEntry": true,
       "watchMode": false
+    },
+    {
+      "type": "bun",
+      "internalConsoleOptions": "neverOpen",
+      "request": "launch",
+      "name": "Run specific file",
+      "program": "${workspaceFolder}/index.ts",
+      "args": ["${workspaceFolder}/../llvm/openmp/runtime/cmake/config-ix.cmake"],
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": true,
+      "watchMode": false
     }
   ]
 }

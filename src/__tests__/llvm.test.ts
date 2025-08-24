@@ -2,7 +2,11 @@ import { isUndefined } from '@freik/typechk';
 import { expect, test } from 'bun:test';
 import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
-import { compareTokensFile, llvmRepoExists, printFullFile } from './test-helpers';
+import {
+  compareTokensFile,
+  llvmRepoExists,
+  printFullFile,
+} from './test-helpers';
 
 test('(FAILING): Try to process all the LLVM CMake files', async () => {
   // If there's an LLVM repo one up from here, go ahead and read it's .cmake files
@@ -42,30 +46,31 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
     return results;
   }
 
-  const bolt = printFullFile(
-    join(llvmPath, 'bolt/cmake/modules/AddBOLT.cmake'),
-  );
-  expect(bolt.length).toBeGreaterThan(0);
   // Example usage
   const cmakeFiles = findCMakeFiles(llvmPath); // or any root directory
-  const failures: string[] = [];
-  const printFailures: string[] = [];
+  const failures: { path: string; fileSize: number }[] = [];
+  const printFailures: { path: string; fileSize: number }[] = [];
   let success = 0;
   let printSuccess = 0;
   for (const path of cmakeFiles) {
-    console.log(path);
+    // Get the file size for sorting of errors:
+    const fileSize = statSync(path).size;
     try {
       const printed = printFullFile(path);
-      expect(printed.length).toBeGreaterThan(0);
+      if (fileSize === 0) {
+        expect(printed.length).toBe(0);
+      } else {
+        expect(printed.length).toBeGreaterThan(0);
+      }
       success++;
-      if (compareTokensFile(path)){
+      if (compareTokensFile(path)) {
         printSuccess++;
       } else {
-        printFailures.push(path);
+        printFailures.push({ path, fileSize });
       }
     } catch (error) {
       console.error(`Error processing file ${path}:`, error);
-      failures.push(path);
+      failures.push({ path, fileSize });
     }
   }
   if (failures.length > 0) {
@@ -73,11 +78,14 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
       (failures.length / (success + failures.length)) *
       100
     ).toFixed(2);
-    throw new Error(
-      `Failed to process files:\n--> ${failures.join('\n--> ')}\n` +
-        `Processed files: Failed ${failures.length} out of ${success + failures.length} total.\n` +
-        `Failure rate: ${failureRate}%\n` +
-        `Print failures: ${printFailures.length} out of ${success} total\n==> ${printFailures.join('\n==> ')}`,
-    );
+    const sortedFailures = failures.sort((a, b) => a.fileSize - b.fileSize);
+    const sortedPrintFailures = printFailures.sort((a, b) => a.fileSize - b.fileSize);
+    const pfailStr = printSuccess !== success ? `
+Print failures: ${printFailures.length} out of ${success} total
+==> ${sortedPrintFailures.map(f => `${f.path} [${f.fileSize} bytes]`).join('\n==> ')}` : '';
+    throw new Error(`Failed to process files:
+--> ${sortedFailures.map(f => `${f.path} [${f.fileSize} bytes]`).join('\n--> ')}
+Processed files: Failed ${failures.length} out of ${success + failures.length} total.
+Failure rate: ${failureRate}%${pfailStr}`);
   }
 });

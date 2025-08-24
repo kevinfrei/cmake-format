@@ -6,13 +6,25 @@ import {
   tokenizeTestFile,
   tokenizeString,
 } from './test-helpers';
+import { parseCMakeFile } from '../parser';
+import { printCMake } from '../printer';
 
-describe('Pretty Printer', () => {
+describe('Pretty Printer simplistic stuff', () => {
   test('prints basic command', () => {
     const output = printTestFile('simple.cmake');
     expect(output).toContain('add_executable');
   });
+  test('Empty file tests', () => {
+    expect(printString('').trim()).toBe('');
+    const [tokens, original] = tokenizeString('\n\n  \n\t\n');
+    const output = parseCMakeFile(tokens, original);
+    const printed = printCMake(output);
+    const [printedTokens, ] = tokenizeString(printed.join('\n'));
+    expect(tokens.count()).toBe(1);
+    expect(printed.join('\n').trim()).toBe('');
+    expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
 
+  });
   test('preserves comments', () => {
     const output = printTestFile('comments.cmake');
     expect(output).toContain('# builds main app');

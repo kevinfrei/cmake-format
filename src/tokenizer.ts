@@ -232,7 +232,7 @@ export function MakeTokenStream(input: string): TokenStream {
       return token;
     }
     throw new Error(
-      `Expected\n\tToken(${type}${value ? `, ${value}` : ''})\ngot\n\t${token} at roughly line ${posMap[curPos - 1]?.line}, column ${posMap[curPos - 1]?.column}`,
+      `Expected\n\tToken(${type}${value ? `, ${value}` : ''})\ngot\n\t${token} at line ${posMap[curPos - 1]?.line}, column ${posMap[curPos - 1]?.column}`,
     );
   }
 

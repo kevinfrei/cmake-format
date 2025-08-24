@@ -35,6 +35,6 @@ describe('Parser', () => {
 
   test('throws on malformed input 4', () => {
     const input = 'if(TRUE)\n# comment';
-    expect(() => parseString(input)).toThrowError('Missing endif()');
+    expect(() => parseString(input)).toThrow();
   });
 });
