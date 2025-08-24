@@ -32,7 +32,7 @@ function formatArg(arg: Argument): string {
       break;
   }
   // TODO: Indent after the newline
-  return arg.tailComment ? `${res} #${arg.tailComment}\n` : res;
+  return arg.tailComment ? `${res} ${arg.tailComment}\n` : res;
 }
 
 function formatArgList(args?: Argument[]): string {

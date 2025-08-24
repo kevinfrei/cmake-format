@@ -48,12 +48,13 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
 
   // Example usage
   const cmakeFiles = findCMakeFiles(llvmPath); // or any root directory
-  const failures: string[] = [];
-  const printFailures: string[] = [];
+  const failures: { path: string; fileSize: number }[] = [];
+  const printFailures: { path: string; fileSize: number }[] = [];
   let success = 0;
   let printSuccess = 0;
   for (const path of cmakeFiles) {
-    // console.log(path);
+    // Get the file size for sorting of errors:
+    const fileSize = statSync(path).size;
     try {
       const printed = printFullFile(path);
       expect(printed.length).toBeGreaterThan(0);
@@ -61,11 +62,11 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
       if (compareTokensFile(path)) {
         printSuccess++;
       } else {
-        printFailures.push(path);
+        printFailures.push({ path, fileSize });
       }
     } catch (error) {
       console.error(`Error processing file ${path}:`, error);
-      failures.push(path);
+      failures.push({ path, fileSize });
     }
   }
   if (failures.length > 0) {
@@ -73,11 +74,13 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
       (failures.length / (success + failures.length)) *
       100
     ).toFixed(2);
+    const sortedFailures = failures.sort((a, b) => a.fileSize - b.fileSize);
+    const sortedPrintFailures = printFailures.sort((a, b) => a.fileSize - b.fileSize);
     const pfailStr = printSuccess !== success ? `
 Print failures: ${printFailures.length} out of ${success} total
-==> ${printFailures.join('\n==> ')}` : '';
+==> ${sortedPrintFailures.map(f => `${f.path} [${f.fileSize} bytes]`).join('\n==> ')}` : '';
     throw new Error(`Failed to process files:
---> ${failures.join('\n--> ')}
+--> ${sortedFailures.map(f => `${f.path} [${f.fileSize} bytes]`).join('\n--> ')}
 Processed files: Failed ${failures.length} out of ${success + failures.length} total.
 Failure rate: ${failureRate}%${pfailStr}`);
   }
