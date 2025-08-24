@@ -97,7 +97,7 @@ function printConditionalBlock(
   }
 
   if (cond.elseBlock) {
-    lines.push(`${spacing}else() ${cond.elseBlock.tailComment || ''}`);
+    lines.push(`${spacing}else(${formatArgList(cond.elseArgs)}) ${cond.elseBlock.tailComment || ''}`);
     cond.elseBlock.body.map((s) => printStatement(s, level + 1, lines));
   }
 

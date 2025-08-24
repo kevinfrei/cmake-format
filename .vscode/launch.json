@@ -20,7 +20,7 @@
       "request": "launch",
       "name": "Run specific file",
       "program": "${workspaceFolder}/index.ts",
-      "args": ["${workspaceFolder}/../llvm/mlir/examples/toy/CMakeLists.txt"],
+      "args": ["${workspaceFolder}/../llvm/llvm/cmake/modules/GetHostTriple.cmake"],
       "cwd": "${workspaceFolder}",
       "stopOnEntry": true,
       "watchMode": false

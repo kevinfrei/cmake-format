@@ -75,6 +75,7 @@ export type ConditionalBlock = {
   body: Statement[];
   elseifBlocks: ElseIfBlock[];
   elseBlock?: ElseBlock;
+  elseArgs?: Argument[];
   endifArgs?: Argument[];
   ifTailComment?: string;
   endifTailComment?: string;
@@ -166,6 +167,7 @@ export function mkConditionalBlock(
   body: Statement[],
   elseifBlocks: ElseIfBlock[],
   elseBlock?: ElseBlock,
+  elseArgs?: Argument[],
   endifArgs?: Argument[],
   ifTailComment?: string,
   endifTailComment?: string,
@@ -176,6 +178,7 @@ export function mkConditionalBlock(
     body,
     elseifBlocks,
     elseBlock,
+    elseArgs,
     endifArgs,
     ifTailComment,
     endifTailComment,
@@ -340,6 +343,7 @@ function parseConditionalBlock(
   const body: Statement[] = [];
   const elseifBlocks: ElseIfBlock[] = [];
   let elseBlock: ElseBlock | undefined;
+  let elseArgs: Argument[] | undefined;
 
   while (true) {
     const next = tokens.peek();
@@ -349,7 +353,7 @@ function parseConditionalBlock(
           elseifBlocks.push(parseElseIfBlock(tokens, state));
           continue;
         case 'else':
-          elseBlock = parseElseBlock(tokens, state);
+          [elseBlock, elseArgs] = parseElseBlock(tokens, state);
           continue;
         case 'endif':
           tokens.expectIdentifier(); // "endif"
@@ -362,6 +366,7 @@ function parseConditionalBlock(
             body,
             elseifBlocks,
             elseBlock,
+            elseArgs,
             endifArgs,
             ifTailComment,
             endifTailComment,
@@ -391,9 +396,10 @@ function parseElseIfBlock(
   return mkElseIfBlock(condition, body, tailComment);
 }
 
-function parseElseBlock(tokens: TokenStream, state: ParserState): ElseBlock {
+function parseElseBlock(tokens: TokenStream, state: ParserState): [ElseBlock, Argument[]] {
   tokens.expectIdentifier(); // "else"
   tokens.expectOpenParen();
+  const elseArgs = parseArguments(tokens);
   tokens.expectCloseParen();
   const tailComment = chkTail(tokens);
 
@@ -402,7 +408,7 @@ function parseElseBlock(tokens: TokenStream, state: ParserState): ElseBlock {
     body.push(parseStatement(tokens, state));
   }
 
-  return mkElseBlock(body, tailComment);
+  return [mkElseBlock(body, tailComment), elseArgs];
 }
 
 function parseMacroDefinition(
