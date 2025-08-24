@@ -1,10 +1,25 @@
 {
-  "name": "cmake-format",
+  "name": "@freik/passable",
   "version": "0.0.1",
   "module": "index.ts",
   "type": "module",
+  "keywords": [
+    "cmake",
+    "formatter",
+    "format",
+    "cmake-format",
+    "cmakeformat",
+    "cmake-formatter",
+    "cmakeformatter",
+    "auto-formatter",
+    "autoformatter",
+    "auto-format",
+    "autoformat",
+    "prettier",
+    "cli"
+  ],
   "bin": {
-    "cmake-format": "index.ts"
+    "passable": "index.ts"
   },
   "scripts": {
     "build": "tsc",

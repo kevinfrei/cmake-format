@@ -3,10 +3,12 @@ import { parseCMakeFile } from './src/parser';
 import { printCMake } from './src/printer';
 import { MakeTokenStream } from './src/tokenizer';
 
+const appName = process.argv[1]!.split(/[\\/]/).pop();
+
 function usage() {
-  console.error('Usage: cmake-format <file>');
-  console.error('or cmake-format (-i/--in-place) <file>');
-  // console.error('or "bun start (-i/--in-place) <file>" from the project root');
+  console.error(`Usage: ${appName} <files...>`);
+  console.error(`or ${appName} (-i/--in-place) <files...>`);
+  // console.error(`or "bun start (-i/--in-place) <files...>" from the project root`);
   process.exit(1);
 }
 
@@ -18,18 +20,23 @@ export function printFullFile(path: string): string[] {
 }
 
 if (
-  process.argv.length !== 3 &&
-  process.argv.length !== 4 &&
-  process.argv[2] !== '-i' &&
-  process.argv[2] !== '--in-place'
+  process.argv.length < 3 ||
+  (process.argv.length === 3 &&
+    process.argv[2] !== '-i' &&
+    process.argv[2] !== '--in-place')
 ) {
   usage();
 }
-const filePath = process.argv[process.argv.length - 1]!;
+const inPlace = process.argv[2] === '-i' || process.argv[2] === '--in-place';
+const filePaths = inPlace ? process.argv.slice(3) : process.argv.slice(2);
 
-const lines = printFullFile(filePath);
-if (process.argv.length === 3) {
-  lines.forEach((line) => console.log(line));
-} else {
-  writeFileSync(filePath, lines.join('\n'), 'utf-8');
-}
+// TODO: Load settings from .passable.json or .passablerc
+
+filePaths.forEach((filePath) => {
+  const lines = printFullFile(filePath);
+  if (!inPlace) {
+    lines.forEach((line) => console.log(line));
+  } else {
+    writeFileSync(filePath, lines.join('\n'), 'utf-8');
+  }
+});
