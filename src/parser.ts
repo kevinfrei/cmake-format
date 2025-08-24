@@ -10,6 +10,7 @@ export enum NumberedParserTokenType {
   ElseBlock, // = 'ElseBlock',
   Group, // = 'Group',
   MacroDefinition, // = 'MacroDefinition',
+  Bracketed, // = 'Bracketed',
   BlockComment, // = 'BlockComment',
   Directive, // = 'Directive',
   CMakeFile, // = 'CMakeFile',
@@ -25,6 +26,7 @@ export enum ParserTokenType {
   ElseBlock = 'ElseBlock',
   Group = 'Group',
   MacroDefinition = 'MacroDefinition',
+  Bracketed = 'Bracketed',
   BlockComment = 'BlockComment',
   Directive = 'Directive',
   CMakeFile = 'CMakeFile',
@@ -45,16 +47,22 @@ export type VariableReference = {
   name: string;
 };
 
+export type BracketedString = {
+  type: ParserTokenType.Bracketed;
+  value: string;
+  equals: number;
+};
+
 export type GroupedArg = {
   type: ParserTokenType.Group;
-  value: Argument[];
-  openTailComment?: string;
+  value: ArgList;
 };
 
 export type NonCommentArg = (
   | QuotedString
   | UnquotedString
   | VariableReference
+  | BracketedString
   | GroupedArg
 ) & {
   tailComment?: string;
@@ -62,28 +70,32 @@ export type NonCommentArg = (
 
 export type Argument = BlockComment | NonCommentArg;
 
+export type ArgList = {
+  args: Argument[];
+  prefixTailComment?: string;
+};
+
 export type CommandInvocation = {
   type: ParserTokenType.CommandInvocation;
   name: string;
-  args: Argument[];
+  args: ArgList;
   tailComment?: string;
 };
 
 export type ConditionalBlock = {
   type: ParserTokenType.ConditionalBlock;
-  condition: Argument[];
+  condition: ArgList;
   body: Statement[];
   elseifBlocks: ElseIfBlock[];
   elseBlock?: ElseBlock;
-  elseArgs?: Argument[];
-  endifArgs?: Argument[];
+  endifArgs?: ArgList;
   ifTailComment?: string;
   endifTailComment?: string;
 };
 
 export type ElseIfBlock = {
   type: ParserTokenType.ElseIfBlock;
-  condition: Argument[];
+  condition: ArgList;
   body: Statement[];
   tailComment?: string;
 };
@@ -91,6 +103,7 @@ export type ElseIfBlock = {
 export type ElseBlock = {
   type: ParserTokenType.ElseBlock;
   body: Statement[];
+  elseArgs?: ArgList;
   tailComment?: string;
 };
 
@@ -99,7 +112,7 @@ export type MacroDefinition = {
   name: string;
   params: string[];
   body: Statement[];
-  endMacroArgs?: string[];
+  endMacroArgs?: ArgList;
   startTailComment?: string;
   endTailComment?: string;
 };
@@ -137,7 +150,7 @@ export function mkCMakeFile(statements: Statement[]): CMakeFile {
 
 export function mkCommandInvocation(
   name: string,
-  args: Argument[],
+  args: ArgList,
   tailComment?: string,
 ): CommandInvocation {
   return { type: ParserTokenType.CommandInvocation, name, args, tailComment };
@@ -155,20 +168,30 @@ export function mkVariableReference(name: string): VariableReference {
   return { type: ParserTokenType.VariableReference, name };
 }
 
+export function mkBracketed(
+  value: string
+): BracketedString {
+  const countPos = value.indexOf(':');
+  if (countPos < 1) {
+    throw new Error(`Invalid bracketed string value: ${value}`);
+  }
+  const equals = parseInt(value.substring(0, countPos), 10);
+  const bracketedValue = value.substring(countPos + 1);
+  return { type: ParserTokenType.Bracketed, value: bracketedValue, equals };
+}
+
 export function mkGroupedArg(
-  value: Argument[],
-  openTailComment?: string,
+  value: ArgList
 ): GroupedArg {
-  return { type: ParserTokenType.Group, value, openTailComment };
+  return { type: ParserTokenType.Group, value };
 }
 
 export function mkConditionalBlock(
-  condition: Argument[],
+  condition: ArgList,
   body: Statement[],
   elseifBlocks: ElseIfBlock[],
   elseBlock?: ElseBlock,
-  elseArgs?: Argument[],
-  endifArgs?: Argument[],
+  endifArgs?: ArgList,
   ifTailComment?: string,
   endifTailComment?: string,
 ): ConditionalBlock {
@@ -178,7 +201,6 @@ export function mkConditionalBlock(
     body,
     elseifBlocks,
     elseBlock,
-    elseArgs,
     endifArgs,
     ifTailComment,
     endifTailComment,
@@ -194,7 +216,7 @@ export function mkDirective(value: string): Directive {
 }
 
 export function mkElseIfBlock(
-  condition: Argument[],
+  condition: ArgList,
   body: Statement[],
   tailComment?: string,
 ): ElseIfBlock {
@@ -203,16 +225,17 @@ export function mkElseIfBlock(
 
 export function mkElseBlock(
   body: Statement[],
+  elseArgs?: ArgList,
   tailComment?: string,
 ): ElseBlock {
-  return { type: ParserTokenType.ElseBlock, body, tailComment };
+  return { type: ParserTokenType.ElseBlock, body, elseArgs, tailComment };
 }
 
 export function mkMacroDefinition(
   name: string,
   params: string[],
   body: Statement[],
-  endMacroArgs?: string[],
+  endMacroArgs?: ArgList,
   startTailComment?: string,
   endTailComment?: string,
 ): MacroDefinition {
@@ -268,12 +291,18 @@ function parseCommandInvocation(tokens: TokenStream): CommandInvocation {
   return mkCommandInvocation(name, args, tailComment);
 }
 
-function parseArguments(tokens: TokenStream): Argument[] {
+// Requires the opening paren has already been consumed.
+// TODO: Maybe change that to only having been peeked?
+function parseArguments(tokens: TokenStream): ArgList {
   const args: Argument[] = [];
+  const prefixTailComment = tokens.peek().is(TokenType.TailComment)
+    ? tokens.consume().value!
+    : undefined;
+
   while (!tokens.peek().isCloseParen()) {
     args.push(parseArgument(tokens));
   }
-  return args;
+  return { args, prefixTailComment };
 }
 
 function maybeTailComment(
@@ -289,16 +318,9 @@ function maybeTailComment(
 }
 
 function parseGroupedArgs(tokens: TokenStream): GroupedArg {
-  const args: Argument[] = [];
-  let openTailComment: string | undefined;
-  if (tokens.peek().isComment()) {
-    openTailComment = tokens.consume().value!;
-  }
-  while (!tokens.peek().isCloseParen()) {
-    args.push(parseArgument(tokens));
-  }
+  const value = parseArguments(tokens);
   tokens.expectCloseParen();
-  return mkGroupedArg(args, openTailComment);
+  return mkGroupedArg(value);
 }
 
 function parseArgument(tokens: TokenStream): Argument {
@@ -312,11 +334,15 @@ function parseArgument(tokens: TokenStream): Argument {
       return maybeTailComment(tokens, mkVariableReference(token.value!));
     case TokenType.Comment:
       return mkCommentBlock(token.value!);
+    case TokenType.TailComment:
+      // Tail comment like this: "if ( # why can't we have nice things?"
     case TokenType.Paren:
       if (token.isOpenParen()) {
         return maybeTailComment(tokens, parseGroupedArgs(tokens));
       }
       break;
+    case TokenType.Bracketed:
+      return maybeTailComment(tokens, mkBracketed(token.value!));
   }
   const prev = tokens.history(10);
   const val = prev.map((t) => t.toString()).join(' * ');
@@ -343,7 +369,6 @@ function parseConditionalBlock(
   const body: Statement[] = [];
   const elseifBlocks: ElseIfBlock[] = [];
   let elseBlock: ElseBlock | undefined;
-  let elseArgs: Argument[] | undefined;
 
   while (true) {
     const next = tokens.peek();
@@ -353,7 +378,7 @@ function parseConditionalBlock(
           elseifBlocks.push(parseElseIfBlock(tokens, state));
           continue;
         case 'else':
-          [elseBlock, elseArgs] = parseElseBlock(tokens, state);
+          elseBlock = parseElseBlock(tokens, state);
           continue;
         case 'endif':
           tokens.expectIdentifier(); // "endif"
@@ -366,7 +391,6 @@ function parseConditionalBlock(
             body,
             elseifBlocks,
             elseBlock,
-            elseArgs,
             endifArgs,
             ifTailComment,
             endifTailComment,
@@ -396,7 +420,7 @@ function parseElseIfBlock(
   return mkElseIfBlock(condition, body, tailComment);
 }
 
-function parseElseBlock(tokens: TokenStream, state: ParserState): [ElseBlock, Argument[]] {
+function parseElseBlock(tokens: TokenStream, state: ParserState): ElseBlock {
   tokens.expectIdentifier(); // "else"
   tokens.expectOpenParen();
   const elseArgs = parseArguments(tokens);
@@ -407,8 +431,7 @@ function parseElseBlock(tokens: TokenStream, state: ParserState): [ElseBlock, Ar
   while (!tokens.peek().isIdentifier('endif')) {
     body.push(parseStatement(tokens, state));
   }
-
-  return [mkElseBlock(body, tailComment), elseArgs];
+  return mkElseBlock(body, elseArgs, tailComment);
 }
 
 function parseMacroDefinition(
@@ -434,10 +457,7 @@ function parseMacroDefinition(
 
   tokens.expectIdentifier(); // "endmacro"
   tokens.expectOpenParen();
-  const endMacroParams: string[] = [];
-  while (tokens.peek().isIdentifier()) {
-    endMacroParams.push(tokens.expectIdentifier());
-  }
+  const endMacroParams: ArgList = parseArguments(tokens);
   tokens.expectCloseParen();
   const endTailComment = chkTail(tokens);
 

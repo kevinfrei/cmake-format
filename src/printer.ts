@@ -1,5 +1,6 @@
 import {
   ParserTokenType,
+  type ArgList,
   type Argument,
   type CMakeFile,
   type CommandInvocation,
@@ -14,55 +15,44 @@ function indent(lines: string[], level: number): string[] {
 }
 
 function formatArg(arg: Argument): string {
-  let res = '';
   switch (arg.type) {
     case ParserTokenType.BlockComment:
       return `\n${arg.value}\n`; // TODO: Indent
     case ParserTokenType.QuotedString:
-      res = `"${arg.value}"`;
-      break;
+      return `"${arg.value}"`;
     case ParserTokenType.UnquotedString:
-      res = arg.value;
-      break;
+      return arg.value;
     case ParserTokenType.VariableReference:
-      res = `\${${arg.name}}`;
-      break;
+      return `\${${arg.name}}`;
     case ParserTokenType.Group:
-      res = `(${arg.value.map(formatArg).join(' ')})`;
-      break;
+      return `(${formatArgList(arg.value)})`;
+    case ParserTokenType.Bracketed:
+      const eq = '='.repeat(arg.equals);
+      return `[${eq}[${arg.value}]${eq}]`;
   }
-  // TODO: Indent after the newline
-  return arg.tailComment ? `${res} ${arg.tailComment}\n` : res;
 }
 
-function formatArgList(args?: Argument[]): string {
+function formatArgList(argList?: ArgList): string {
+  if (!argList || (argList.args.length === 0 && argList.prefixTailComment === undefined)) {
+    return '';
+  }
   let res = '';
-  if (!args) {
+  if (!argList.args) {
     return res;
   }
   let first = true;
-  for (const arg of args) {
+  for (const arg of argList.args) {
     if (!first) {
       res += ' ';
     } else {
+      if (argList.prefixTailComment) {
+        res += ` #${argList.prefixTailComment}\n`;
+      }
       first = false;
     }
-    switch (arg.type) {
-      case ParserTokenType.Group:
-        if (arg.openTailComment) {
-          res += `( #${arg.openTailComment}\n`;
-        } else {
-          res += '(';
-        }
-        res += `${formatArgList(arg.value)}`;
-        if (arg.tailComment) {
-          res += `) #${arg.tailComment}\n`;
-        } else {
-          res += ') ';
-        }
-        break;
-      default:
-        res += formatArg(arg);
+    res += formatArg(arg);
+    if (arg.type !== ParserTokenType.BlockComment && arg.tailComment) {
+      res += ` #${arg.tailComment}\n`;
     }
   }
   return res;
@@ -73,7 +63,7 @@ function printCommandInvocation(
   level: number,
   lines: string[],
 ): void {
-  const args = cmd.args.map(formatArg).join(' ');
+  const args = formatArgList(cmd.args);
   const line = `${'  '.repeat(level)}${cmd.name}(${args})`;
   lines.push(cmd.tailComment ? `${line} ${cmd.tailComment}` : line);
 }
@@ -97,7 +87,7 @@ function printConditionalBlock(
   }
 
   if (cond.elseBlock) {
-    lines.push(`${spacing}else(${formatArgList(cond.elseArgs)}) ${cond.elseBlock.tailComment || ''}`);
+    lines.push(`${spacing}else(${formatArgList(cond.elseBlock?.elseArgs ?? undefined)}) ${cond.elseBlock.tailComment || ''}`);
     cond.elseBlock.body.map((s) => printStatement(s, level + 1, lines));
   }
 
@@ -115,7 +105,7 @@ function printMacroDefinition(
     `${'  '.repeat(level)}macro(${mac.name} ${mac.params.join(' ')}) ${mac.startTailComment || ''}`,
   );
   mac.body.map((s) => printStatement(s, level + 1, lines));
-  lines.push(`${'  '.repeat(level)}endmacro(${mac.endMacroArgs?.join(' ') || ''}) ${mac.endTailComment || ''}`);
+  lines.push(`${'  '.repeat(level)}endmacro(${formatArgList(mac.endMacroArgs)}) ${mac.endTailComment || ''}`);
 }
 
 function printStatement(stmt: Statement, level: number, lines: string[]): void {

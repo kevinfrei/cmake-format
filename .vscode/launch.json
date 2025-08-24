@@ -20,7 +20,7 @@
       "request": "launch",
       "name": "Run specific file",
       "program": "${workspaceFolder}/index.ts",
-      "args": ["${workspaceFolder}/../llvm/llvm/cmake/modules/GetHostTriple.cmake"],
+      "args": ["${workspaceFolder}/../llvm/openmp/runtime/cmake/config-ix.cmake"],
       "cwd": "${workspaceFolder}",
       "stopOnEntry": true,
       "watchMode": false
