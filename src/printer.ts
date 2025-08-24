@@ -9,8 +9,15 @@ import type {
 } from './parser';
 import { ParserTokenType } from './parser';
 
-function indent(lines: string[], level: number): string[] {
-  const pad = '  '.repeat(level);
+let indentSpace = '  ';
+
+function indent(lines: string, level: number): string;
+function indent(lines: string[], level: number): string[];
+function indent(lines: string | string[], level: number): string | string[] {
+  const pad = indentSpace.repeat(level);
+  if (typeof lines === 'string') {
+    return pad + lines;
+  }
   return lines.map((line) => pad + line);
 }
 
@@ -67,7 +74,7 @@ function printCommandInvocation(
   lines: string[],
 ): void {
   const args = formatArgList(cmd.args);
-  const line = `${'  '.repeat(level)}${cmd.name}(${args})`;
+  const line = indent(`${cmd.name}(${args})`, level);
   lines.push(cmd.tailComment ? `${line} ${cmd.tailComment}` : line);
 }
 
@@ -76,28 +83,39 @@ function printConditionalBlock(
   level: number,
   lines: string[],
 ): void {
-  const spacing = '  '.repeat(level);
   lines.push(
-    `${spacing}if(${formatArgList(cond.condition)}) ${cond.ifTailComment || ''}`,
+    indent(
+      `if(${formatArgList(cond.condition)}) ${cond.ifTailComment || ''}`,
+      level,
+    ),
   );
   cond.body.map((s) => printStatement(s, level + 1, lines));
 
   for (const elseif of cond.elseifBlocks) {
     lines.push(
-      `${spacing}elseif(${formatArgList(elseif.condition)}) ${elseif.tailComment || ''}`,
+      indent(
+        `elseif(${formatArgList(elseif.condition)}) ${elseif.tailComment || ''}`,
+        level,
+      ),
     );
     elseif.body.map((s) => printStatement(s, level + 1, lines));
   }
 
   if (cond.elseBlock) {
     lines.push(
-      `${spacing}else(${formatArgList(cond.elseBlock?.elseArgs ?? undefined)}) ${cond.elseBlock.tailComment || ''}`,
+      indent(
+        `else(${formatArgList(cond.elseBlock?.elseArgs ?? undefined)}) ${cond.elseBlock.tailComment || ''}`,
+        level,
+      ),
     );
     cond.elseBlock.body.map((s) => printStatement(s, level + 1, lines));
   }
 
   lines.push(
-    `${spacing}endif(${formatArgList(cond.endifArgs)}) ${cond.endifTailComment || ''}`,
+    indent(
+      `endif(${formatArgList(cond.endifArgs)}) ${cond.endifTailComment || ''}`,
+      level,
+    ),
   );
 }
 
@@ -107,11 +125,17 @@ function printPairedCall(
   lines: string[],
 ): void {
   lines.push(
-    `${'  '.repeat(level)}${call.open}(${formatArgList(call.params)}) ${call.startTailComment || ''}`,
+    indent(
+      `${call.open}(${formatArgList(call.params)}) ${call.startTailComment || ''}`,
+      level,
+    ),
   );
   call.body.map((s) => printStatement(s, level + 1, lines));
   lines.push(
-    `${'  '.repeat(level)}${call.close}(${formatArgList(call.endArgs)}) ${call.endTailComment || ''}`,
+    indent(
+      `${call.close}(${formatArgList(call.endArgs)}) ${call.endTailComment || ''}`,
+      level,
+    ),
   );
 }
 
@@ -130,7 +154,7 @@ function printStatement(stmt: Statement, level: number, lines: string[]): void {
       lines.push(...indent(stmt.value.split('\n'), level));
       break;
     case ParserTokenType.Directive:
-      lines.push(`${'  '.repeat(level)}${stmt.value}`);
+      lines.push(indent(stmt.value, level));
       break;
   }
 }
