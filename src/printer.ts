@@ -1,13 +1,13 @@
-import {
-  ParserTokenType,
-  type ArgList,
-  type Argument,
-  type CMakeFile,
-  type CommandInvocation,
-  type ConditionalBlock,
-  type MacroDefinition,
-  type Statement,
+import type {
+  ArgList,
+  Argument,
+  CMakeFile,
+  CommandInvocation,
+  ConditionalBlock,
+  PairedCall,
+  Statement,
 } from './parser';
+import { ParserTokenType } from './parser';
 
 function indent(lines: string[], level: number): string[] {
   const pad = '  '.repeat(level);
@@ -33,7 +33,10 @@ function formatArg(arg: Argument): string {
 }
 
 function formatArgList(argList?: ArgList): string {
-  if (!argList || (argList.args.length === 0 && argList.prefixTailComment === undefined)) {
+  if (
+    !argList ||
+    (argList.args.length === 0 && argList.prefixTailComment === undefined)
+  ) {
     return '';
   }
   let res = '';
@@ -87,7 +90,9 @@ function printConditionalBlock(
   }
 
   if (cond.elseBlock) {
-    lines.push(`${spacing}else(${formatArgList(cond.elseBlock?.elseArgs ?? undefined)}) ${cond.elseBlock.tailComment || ''}`);
+    lines.push(
+      `${spacing}else(${formatArgList(cond.elseBlock?.elseArgs ?? undefined)}) ${cond.elseBlock.tailComment || ''}`,
+    );
     cond.elseBlock.body.map((s) => printStatement(s, level + 1, lines));
   }
 
@@ -96,16 +101,18 @@ function printConditionalBlock(
   );
 }
 
-function printMacroDefinition(
-  mac: MacroDefinition,
+function printPairedCall(
+  call: PairedCall,
   level: number,
   lines: string[],
 ): void {
   lines.push(
-    `${'  '.repeat(level)}macro(${mac.name} ${mac.params.join(' ')}) ${mac.startTailComment || ''}`,
+    `${'  '.repeat(level)}${call.open}(${formatArgList(call.params)}) ${call.startTailComment || ''}`,
   );
-  mac.body.map((s) => printStatement(s, level + 1, lines));
-  lines.push(`${'  '.repeat(level)}endmacro(${formatArgList(mac.endMacroArgs)}) ${mac.endTailComment || ''}`);
+  call.body.map((s) => printStatement(s, level + 1, lines));
+  lines.push(
+    `${'  '.repeat(level)}${call.close}(${formatArgList(call.endArgs)}) ${call.endTailComment || ''}`,
+  );
 }
 
 function printStatement(stmt: Statement, level: number, lines: string[]): void {
@@ -116,8 +123,8 @@ function printStatement(stmt: Statement, level: number, lines: string[]): void {
     case ParserTokenType.ConditionalBlock:
       printConditionalBlock(stmt, level, lines);
       break;
-    case ParserTokenType.MacroDefinition:
-      printMacroDefinition(stmt, level, lines);
+    case ParserTokenType.PairedCall:
+      printPairedCall(stmt, level, lines);
       break;
     case ParserTokenType.BlockComment:
       lines.push(...indent(stmt.value.split('\n'), level));

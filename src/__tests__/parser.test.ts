@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { ParserTokenType } from '../parser';
-import { parseTestFile, parseString } from './test-helpers';
+import { parseString, parseTestFile } from './test-helpers';
 
 describe('Parser', () => {
   test('parses basic command', () => {
@@ -11,7 +11,7 @@ describe('Parser', () => {
   test('parses macros and conditionals', () => {
     const ast = parseTestFile('grammar.cmake');
     expect(
-      ast.statements.some((s) => s.type === ParserTokenType.MacroDefinition),
+      ast.statements.some((s) => s.type === ParserTokenType.PairedCall),
     ).toBeTrue();
     expect(
       ast.statements.some((s) => s.type === ParserTokenType.ConditionalBlock),

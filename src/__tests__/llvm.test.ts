@@ -8,7 +8,7 @@ import {
   printFullFile,
 } from './test-helpers';
 
-test('(FAILING): Try to process all the LLVM CMake files', async () => {
+test('Process all the LLVM CMake files [if the repo exists]', async () => {
   // If there's an LLVM repo one up from here, go ahead and read it's .cmake files
   const llvmPath = llvmRepoExists();
   if (isUndefined(llvmPath)) {
@@ -79,12 +79,17 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
       100
     ).toFixed(2);
     const sortedFailures = failures.sort((a, b) => a.fileSize - b.fileSize);
-    const sortedPrintFailures = printFailures.sort((a, b) => a.fileSize - b.fileSize);
-    const pfailStr = printSuccess !== success ? `
+    const sortedPrintFailures = printFailures.sort(
+      (a, b) => a.fileSize - b.fileSize,
+    );
+    const pfailStr =
+      printSuccess !== success
+        ? `
 Print failures: ${printFailures.length} out of ${success} total
-==> ${sortedPrintFailures.map(f => `${f.path} [${f.fileSize} bytes]`).join('\n==> ')}` : '';
+==> ${sortedPrintFailures.map((f) => `${f.path} [${f.fileSize} bytes]`).join('\n==> ')}`
+        : '';
     throw new Error(`Failed to process files:
---> ${sortedFailures.map(f => `${f.path} [${f.fileSize} bytes]`).join('\n--> ')}
+--> ${sortedFailures.map((f) => `${f.path} [${f.fileSize} bytes]`).join('\n--> ')}
 Processed files: Failed ${failures.length} out of ${success + failures.length} total.
 Failure rate: ${failureRate}%${pfailStr}`);
   }

@@ -1,7 +1,6 @@
 // Tokenizer types
 
 import { isString, isUndefined } from '@freik/typechk';
-import { start } from 'repl';
 
 // This should be faster, but the strings make it more debuggable
 export enum NumberedTokenType {
@@ -63,7 +62,7 @@ export type TokenStream = {
   count: () => number;
   history: (num: number) => Token[];
   expect: (type: TokenType, value?: string) => Token;
-  expectIdentifier: () => string;
+  expectIdentifier: (val?: string) => string;
   expectOpenParen: () => boolean;
   expectCloseParen: () => boolean;
   /*
@@ -236,8 +235,11 @@ export function MakeTokenStream(input: string): TokenStream {
     );
   }
 
-  function expectIdentifier(): string {
-    return expect(TokenType.Identifier).value!;
+  function expectIdentifier(val?: string): string {
+    const token = isUndefined(val)
+      ? expect(TokenType.Identifier)
+      : expect(TokenType.Identifier, val);
+    return token.value!;
   }
 
   function MaybePush(curToken: string): string {
