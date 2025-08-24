@@ -13,6 +13,19 @@
       "cwd": "${workspaceFolder}",
       "stopOnEntry": true,
       "watchMode": false
+    },
+    {
+      "type": "bun",
+      "internalConsoleOptions": "neverOpen",
+      "request": "launch",
+      "name": "Run specific file",
+      "program": "${workspaceFolder}/index.ts",
+      "args": [
+        "${workspaceFolder}/../llvm/clang/cmake/caches/3-stage-base.cmake"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": true,
+      "watchMode": false
     }
   ]
 }

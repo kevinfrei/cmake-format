@@ -46,10 +46,6 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
     return results;
   }
 
-  const bolt = printFullFile(
-    join(llvmPath, 'bolt/cmake/modules/AddBOLT.cmake'),
-  );
-  expect(bolt.length).toBeGreaterThan(0);
   // Example usage
   const cmakeFiles = findCMakeFiles(llvmPath); // or any root directory
   const failures: string[] = [];
@@ -57,7 +53,7 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
   let success = 0;
   let printSuccess = 0;
   for (const path of cmakeFiles) {
-    console.log(path);
+    // console.log(path);
     try {
       const printed = printFullFile(path);
       expect(printed.length).toBeGreaterThan(0);
@@ -77,31 +73,12 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
       (failures.length / (success + failures.length)) *
       100
     ).toFixed(2);
+    const pfailStr = printSuccess !== success ? `
+Print failures: ${printFailures.length} out of ${success} total
+==> ${printFailures.join('\n==> ')}` : '';
     throw new Error(`Failed to process files:
 --> ${failures.join('\n--> ')}
 Processed files: Failed ${failures.length} out of ${success + failures.length} total.
-Failure rate: ${failureRate}%
-Print failures: ${printFailures.length} out of ${success} total
-==> ${printFailures.join('\n==> ')}`);
+Failure rate: ${failureRate}%${pfailStr}`);
   }
 });
-
-/* Printed files tokenize differently as of 8AM PDT 23 Aug 2025:
-
-llvm/clang/examples/LLVMPrintFunctionNames/CMakeLists.txt
-llvm/clang/examples/PrintFunctionNames/CMakeLists.txt
-llvm/compiler-rt/lib/orc/CMakeLists.txt
-llvm/compiler-rt/lib/xray/CMakeLists.txt
-llvm/compiler-rt/test/CMakeLists.txt
-llvm/flang/runtime/Float128Math/CMakeLists.txt
-llvm/flang/tools/flang-driver/CMakeLists.txt
-llvm/libcxx/cmake/Modules/HandleLibC.cmake
-llvm/libcxx/cmake/Modules/HandleLibCXXABI.cmake
-llvm/lld/CMakeLists.txt
-llvm/openmp/runtime/cmake/LibompHandleFlags.cmake
-llvm/openmp/runtime/cmake/LibompMicroTests.cmake
-llvm/polly/unittests/CMakeLists.txt
-
-(With 217 failures to just tokenize the original)
-
-*/
