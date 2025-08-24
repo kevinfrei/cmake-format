@@ -9,7 +9,20 @@ import type {
 } from './parser';
 import { ParserTokenType } from './parser';
 
-let indentSpace = '  ';
+// TODO: Put this stuff into a configuration file
+const configuration = {
+  useSpaces: true,
+  indentSize: 2,
+  crlf: false,
+};
+
+let indentSpace = configuration.useSpaces
+  ? ' '.repeat(configuration.indentSize)
+  : '\t';
+
+export function getEOL(): string {
+  return configuration.crlf ? '\r\n' : '\n';
+}
 
 function indent(lines: string, level: number): string;
 function indent(lines: string[], level: number): string[];
