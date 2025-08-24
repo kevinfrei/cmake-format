@@ -14,20 +14,58 @@ function indent(lines: string[], level: number): string[] {
 }
 
 function formatArg(arg: Argument): string {
+  let res = '';
   switch (arg.type) {
+    case ParserTokenType.BlockComment:
+      return `${arg.value}\n`; // TODO: Indent after the newline
     case ParserTokenType.QuotedString:
-      return `"${arg.value}"`;
+      res = `"${arg.value}"`;
+      break;
     case ParserTokenType.UnquotedString:
-      return arg.value;
+      res = arg.value;
+      break;
     case ParserTokenType.VariableReference:
-      return `\${${arg.name}}`;
+      res = `\${${arg.name}}`;
+      break;
     case ParserTokenType.Group:
-      return `(${arg.value.map(formatArg).join(' ')})`;
+      res = `(${arg.value.map(formatArg).join(' ')})`;
+      break;
   }
+  // TODO: Indent after the newline
+  return arg.tailComment ? `${res} #${arg.tailComment}\n` : res;
 }
 
 function formatArgList(args?: Argument[]): string {
-  return args?.map(formatArg).join(' ') || '';
+  let res = '';
+  if (!args) {
+    return res;
+  }
+  let first = true;
+  for (const arg of args) {
+    if (!first) {
+      res += ' ';
+    } else {
+      first = false;
+    }
+    switch (arg.type) {
+      case ParserTokenType.Group:
+        if (arg.openTailComment) {
+          res += `( #${arg.openTailComment}\n`;
+        } else {
+          res += '(';
+        }
+        res += `${formatArgList(arg.value)}`;
+        if (arg.tailComment) {
+          res += `) #${arg.tailComment}\n`;
+        } else {
+          res += ') ';
+        }
+        break;
+      default:
+        res += formatArg(arg);
+    }
+  }
+  return res;
 }
 
 function printCommandInvocation(

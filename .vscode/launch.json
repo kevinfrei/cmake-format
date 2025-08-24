@@ -20,9 +20,7 @@
       "request": "launch",
       "name": "Run specific file",
       "program": "${workspaceFolder}/index.ts",
-      "args": [
-        "${workspaceFolder}/../llvm/clang/cmake/caches/3-stage-base.cmake"
-      ],
+      "args": ["${workspaceFolder}/../llvm/clang/CMakeLists.txt"],
       "cwd": "${workspaceFolder}",
       "stopOnEntry": true,
       "watchMode": false

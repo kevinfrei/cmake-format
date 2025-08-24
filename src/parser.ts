@@ -48,9 +48,19 @@ export type VariableReference = {
 export type GroupedArg = {
   type: ParserTokenType.Group;
   value: Argument[];
+  openTailComment?: string;
 };
 
-export type Argument = QuotedString | UnquotedString | VariableReference | GroupedArg;
+export type NonCommentArg = (
+  | QuotedString
+  | UnquotedString
+  | VariableReference
+  | GroupedArg
+) & {
+  tailComment?: string;
+};
+
+export type Argument = BlockComment | NonCommentArg;
 
 export type CommandInvocation = {
   type: ParserTokenType.CommandInvocation;
@@ -131,20 +141,23 @@ export function mkCommandInvocation(
   return { type: ParserTokenType.CommandInvocation, name, args, tailComment };
 }
 
-export function mkQuotedString(value: string): Argument {
+export function mkQuotedString(value: string): QuotedString {
   return { type: ParserTokenType.QuotedString, value };
 }
 
-export function mkUnquotedString(value: string): Argument {
+export function mkUnquotedString(value: string): UnquotedString {
   return { type: ParserTokenType.UnquotedString, value };
 }
 
-export function mkVariableReference(name: string): Argument {
+export function mkVariableReference(name: string): VariableReference {
   return { type: ParserTokenType.VariableReference, name };
 }
 
-export function mkGroupedArg(value: Argument[]): GroupedArg {
-  return { type: ParserTokenType.Group, value };
+export function mkGroupedArg(
+  value: Argument[],
+  openTailComment?: string,
+): GroupedArg {
+  return { type: ParserTokenType.Group, value, openTailComment };
 }
 
 export function mkConditionalBlock(
@@ -257,27 +270,45 @@ function parseArguments(tokens: TokenStream): Argument[] {
   return args;
 }
 
-function parseGroupedArgs(tokens: TokenStream): Argument[] {
+function maybeTailComment(
+  tokens: TokenStream,
+  arg: NonCommentArg,
+): NonCommentArg {
+  const next = tokens.peek();
+  if (next.is(TokenType.TailComment)) {
+    tokens.consume();
+    return { ...arg, tailComment: next.value! };
+  }
+  return arg;
+}
+
+function parseGroupedArgs(tokens: TokenStream): GroupedArg {
   const args: Argument[] = [];
+  let openTailComment: string | undefined;
+  if (tokens.peek().isComment()) {
+    openTailComment = tokens.consume().value!;
+  }
   while (!tokens.peek().isCloseParen()) {
     args.push(parseArgument(tokens));
   }
   tokens.expectCloseParen();
-  return args;
+  return mkGroupedArg(args, openTailComment);
 }
 
 function parseArgument(tokens: TokenStream): Argument {
   const token = tokens.consume();
   switch (token.type) {
     case TokenType.Quoted:
-      return mkQuotedString(token.value!);
+      return maybeTailComment(tokens, mkQuotedString(token.value!));
     case TokenType.Identifier:
-      return mkUnquotedString(token.value!);
+      return maybeTailComment(tokens, mkUnquotedString(token.value!));
     case TokenType.Variable:
-      return mkVariableReference(token.value!);
+      return maybeTailComment(tokens, mkVariableReference(token.value!));
+    case TokenType.Comment:
+      return mkCommentBlock(token.value!);
     case TokenType.Paren:
       if (token.isOpenParen()) {
-        return mkGroupedArg(parseGroupedArgs(tokens));
+        return maybeTailComment(tokens, parseGroupedArgs(tokens));
       }
       break;
   }
@@ -310,7 +341,6 @@ function parseConditionalBlock(
   while (true) {
     const next = tokens.peek();
     if (next.isIdentifier()) {
-
       switch (next.value) {
         case 'elseif':
           elseifBlocks.push(parseElseIfBlock(tokens, state));
