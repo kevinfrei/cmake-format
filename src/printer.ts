@@ -9,19 +9,92 @@ import type {
 } from './parser';
 import { ParserTokenType } from './parser';
 
+export type Configuration = {
+  useSpaces?: boolean;
+  indentSize?: number;
+  crlf?: boolean;
+  lineWidth?: number;
+  // NYI:
+  reflowComments?: boolean;
+  commands?: {
+    [commandName: string]: {
+      controlKeywords?: string[];
+      options?: string[];
+    };
+  };
+};
+
+/*
+Style preference:
+****** THIS ONE ****** FALL BACK ****
+*** set(file_list *** set(        ***
+***   foo.cpp     ***   file_list ***
+***   bar.cpp     ***   foo.cpp   ***
+*** )             ***   bar.cpp   ***
+***               *** )           ***
+*************************************
+*/
 // TODO: Put this stuff into a configuration file
-const configuration = {
+const defaultCfg: Configuration = {
   useSpaces: true,
   indentSize: 2,
   crlf: false,
+  lineWidth: 80,
+  reflowComments: false,
+  /*
+    Any other config stuff belongs in here.
+    I feel like I should probably have the ability to use keywords
+    in various commands to also affect indentation
+    Something like this:
+  */
+  commands: {
+    add_library: {
+      // These maybe affect indentation?
+      controlKeywords: [
+        'STATIC',
+        'SHARED',
+        'MODULE',
+        'OBJECT',
+        'INTERFACE',
+        'UNKNOWN',
+        'ALIAS',
+      ],
+      // These just get capitalized
+      options: ['GLOBAL', 'EXCLUDE_FROM_ALL', 'IMPORTED'],
+    },
+    add_executable: {
+      options: [
+        'WIN32',
+        'MACOSX_BUNDLE',
+        'EXCLUDE_FROM_ALL',
+        'IMPORTED',
+        'ALIAS',
+      ],
+    },
+    target_sources: {
+      controlKeywords: [
+        'INTERFACE',
+        'PUBLIC',
+        'PRIVATE',
+        'FILE_SET',
+        'TYPE',
+        'BASE_DIRS',
+        'FILES',
+      ],
+      options: ['HEADERS', 'CXX_MODULES'],
+    },
+    target_compile_definitions: {
+      controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
+    },
+  },
 };
 
-let indentSpace = configuration.useSpaces
-  ? ' '.repeat(configuration.indentSize)
+let indentSpace = defaultCfg.useSpaces
+  ? ' '.repeat(defaultCfg.indentSize || 2)
   : '\t';
 
 export function getEOL(): string {
-  return configuration.crlf ? '\r\n' : '\n';
+  return defaultCfg.crlf ? '\r\n' : '\n';
 }
 
 function indent(lines: string, level: number): string;
