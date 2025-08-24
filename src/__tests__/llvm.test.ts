@@ -57,7 +57,11 @@ test('(FAILING): Try to process all the LLVM CMake files', async () => {
     const fileSize = statSync(path).size;
     try {
       const printed = printFullFile(path);
-      expect(printed.length).toBeGreaterThan(0);
+      if (fileSize === 0) {
+        expect(printed.length).toBe(0);
+      } else {
+        expect(printed.length).toBeGreaterThan(0);
+      }
       success++;
       if (compareTokensFile(path)) {
         printSuccess++;

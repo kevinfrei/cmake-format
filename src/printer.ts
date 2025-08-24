@@ -17,7 +17,7 @@ function formatArg(arg: Argument): string {
   let res = '';
   switch (arg.type) {
     case ParserTokenType.BlockComment:
-      return `${arg.value}\n`; // TODO: Indent after the newline
+      return `\n${arg.value}\n`; // TODO: Indent
     case ParserTokenType.QuotedString:
       res = `"${arg.value}"`;
       break;
