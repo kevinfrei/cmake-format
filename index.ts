@@ -1,3 +1,5 @@
+#!/usr/bin/env bun
+
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseCMakeFile } from './src/parser';
 import { getEOL, printCMake } from './src/printer';
