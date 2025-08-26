@@ -25,14 +25,19 @@ export type Configuration = {
 };
 
 /*
-Style preference:
-****** THIS ONE ****** FALL BACK ****
+
+Style guide:
+
+*************************************
+***   THIS ONE    ***  FALL-BACK  ***
+*************************************
 *** set(file_list *** set(        ***
 ***   foo.cpp     ***   file_list ***
 ***   bar.cpp     ***   foo.cpp   ***
 *** )             ***   bar.cpp   ***
 ***               *** )           ***
 *************************************
+
 */
 // TODO: Put this stuff into a configuration file
 const defaultCfg: Configuration = {
