@@ -10,19 +10,30 @@ import type {
 import { ParserTokenType } from './parser';
 
 export type Configuration = {
-  useSpaces?: boolean;
-  indentSize?: number;
-  crlf?: boolean;
-  printWidth?: number;
-  // NYI:
-  reflowComments?: boolean;
-  commands?: {
+  useSpaces: boolean;
+  indentSize: number;
+  crlf: boolean;
+  printWidth: number;
+  /*
+    Any other config stuff belongs in here.
+    I feel like I should probably have the ability to use keywords
+    in various commands to also affect indentation
+    Something like this:
+  */
+  reflowComments: boolean;
+  commands: {
     [commandName: string]: {
+      // These may affect indentation
       controlKeywords?: string[];
+      // These just get capitalized
       options?: string[];
     };
   };
-};
+  sort: {
+    // The number of args to skip before sorting the arguments
+    [commandName: string]: number;
+  };
+}
 
 /*
 
@@ -46,15 +57,8 @@ const defaultCfg: Configuration = {
   crlf: false, // This one doesn't much matter for console.log output
   printWidth: 80,
   reflowComments: false,
-  /*
-    Any other config stuff belongs in here.
-    I feel like I should probably have the ability to use keywords
-    in various commands to also affect indentation
-    Something like this:
-  */
   commands: {
     add_library: {
-      // These maybe affect indentation?
       controlKeywords: [
         'STATIC',
         'SHARED',
@@ -64,7 +68,6 @@ const defaultCfg: Configuration = {
         'UNKNOWN',
         'ALIAS',
       ],
-      // These just get capitalized
       options: ['GLOBAL', 'EXCLUDE_FROM_ALL', 'IMPORTED'],
     },
     add_executable: {
@@ -92,18 +95,22 @@ const defaultCfg: Configuration = {
       controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
     },
   },
+  sort : {
+    set: 1
+  }
 };
 
 export function getEOL(): string {
   return defaultCfg.crlf ? '\r\n' : '\n';
 }
 
-function PrintAST(ast: CMakeFile) {
+function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
   const lines: string[] = [];
   let level: number = 0;
+  const cfg = { ...defaultCfg, ...config };
 
-  let indentSpace = defaultCfg.useSpaces
-    ? ' '.repeat(defaultCfg.indentSize || 2)
+  let indentSpace = cfg.useSpaces
+    ? ' '.repeat(cfg.indentSize)
     : '\t';
 
   function indent(lines: string): string;
@@ -117,7 +124,7 @@ function PrintAST(ast: CMakeFile) {
   }
 
   function availableWidth(): number {
-    return defaultCfg.printWidth! - (defaultCfg.indentSize || 2) * level;
+    return cfg.printWidth - cfg.indentSize * level;
   }
 
   function formatArg(arg: Argument): string {
@@ -250,6 +257,6 @@ function PrintAST(ast: CMakeFile) {
   ast.statements.forEach((stmt) => printStatement(stmt));
   return lines;
 }
-export function printCMake(ast: CMakeFile): string[] {
-  return PrintAST(ast);
+export function printCMake(ast: CMakeFile, config: Partial<Configuration>={}): string[] {
+  return PrintAST(ast, config);
 }
