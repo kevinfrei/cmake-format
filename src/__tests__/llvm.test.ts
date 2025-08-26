@@ -8,19 +8,14 @@ import {
   printFullFile,
 } from './test-helpers';
 
-test('Process all the LLVM CMake files [if the repo exists]', async () => {
+const cmakeFiles: string[] = [];
+const llvmPath = llvmRepoExists();
+
+function collectFiles() {
   // If there's an LLVM repo one up from here, go ahead and read it's .cmake files
-  const llvmPath = llvmRepoExists();
   if (isUndefined(llvmPath)) {
-    expect(true).toBeTrue();
     return;
   }
-  /*
-  if (!isUndefined(llvmPath)) {
-    expect(true).toBeTrue();
-    return;
-  }
-*/
   // Match files named "CMakeLists.txt" or ending in ".cmake"
   function isCMakeFile(filename: string): boolean {
     return (
@@ -32,22 +27,40 @@ test('Process all the LLVM CMake files [if the repo exists]', async () => {
   }
 
   // Recursively collect matching files
-  function findCMakeFiles(dir: string, results: string[] = []): string[] {
+  function findCMakeFiles(dir: string) {
     for (const entry of readdirSync(dir)) {
       const fullPath = join(dir, entry);
       const stat = statSync(fullPath);
 
       if (stat.isDirectory()) {
-        findCMakeFiles(fullPath, results);
+        findCMakeFiles(fullPath);
       } else if (isCMakeFile(entry)) {
-        results.push(fullPath);
+        cmakeFiles.push(fullPath);
       }
     }
-    return results;
   }
 
   // Example usage
-  const cmakeFiles = findCMakeFiles(llvmPath); // or any root directory
+  findCMakeFiles(llvmPath); // or any root directory
+}
+
+function llvmTestName() {
+  collectFiles();
+  if (isUndefined(llvmPath)) {
+    return 'No LLVM repo found';
+  }
+
+  return `Process ${cmakeFiles.length} LLVM CMake files [if the repo exists]`;
+}
+
+test(llvmTestName(), async () => {
+  // If there's an LLVM repo one up from here, go ahead and read it's .cmake files
+  if (isUndefined(llvmPath)) {
+    expect(true).toBeTrue();
+    return;
+  }
+
+  // Example usage
   const failures: { path: string; fileSize: number }[] = [];
   const printFailures: { path: string; fileSize: number }[] = [];
   let success = 0;
