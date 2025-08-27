@@ -13,7 +13,7 @@ export enum NumberedTokenType {
   Comment, // = 'comment',
   TailComment, // = 'tail_comment',
   Directive, // = 'directive',
-  EOL, // = 'eol',
+  EmptyLine, // = 'empty',
   EOF, // = 'eof',
 }
 
@@ -27,7 +27,7 @@ export enum TokenType {
   Comment = 'comment',
   TailComment = 'tail_comment',
   Directive = 'directive',
-  EOL = 'eol',
+  EmptyLine = 'empty',
   EOF = 'eof',
 }
 
@@ -202,7 +202,7 @@ export function MakeEOF(): Token {
 }
 
 export function MakeEOL(): Token {
-  return MakeToken(TokenType.EOL, '');
+  return MakeToken(TokenType.EmptyLine, '');
 }
 
 export function MakeTokenStream(input: string): TokenStream {
@@ -215,6 +215,13 @@ export function MakeTokenStream(input: string): TokenStream {
   function pushToken(token: Token) {
     tokens.push(token);
     posMap.push({ line: lineNumber, column: linePos });
+  }
+
+  function prevToken(): Token {
+    if (curPos - 1 < 0) {
+      return MakeEOF();
+    }
+    return tokens[curPos - 1]!;
   }
 
   function history(num: number): Token[] {
@@ -379,8 +386,11 @@ export function MakeTokenStream(input: string): TokenStream {
     for (lineNumber = 0; lineNumber < lines.length; lineNumber++) {
       const line = lines[lineNumber]!;
       if (line.trim().length === 0) {
+        // We want to treat empty lines as significant, but only *single* EOL's.
         MaybePush(curTok);
-        pushToken(MakeEOL());
+        if (prevToken().type !== TokenType.EmptyLine) {
+          pushToken(MakeEOL());
+        }
         continue;
       }
       for (linePos = 0; linePos < line.length; linePos++) {

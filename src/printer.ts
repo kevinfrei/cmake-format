@@ -8,7 +8,7 @@ import type {
   PairedCall,
   Statement,
 } from './parser';
-import { ParserTokenType } from './parser';
+import { ASTNode } from './parser';
 
 export type Configuration = {
   useSpaces: boolean;
@@ -145,19 +145,19 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
 
   function formatArg(arg: Argument): string {
     switch (arg.type) {
-      case ParserTokenType.BlockComment:
+      case ASTNode.BlockComment:
         return `\n${arg.value}\n`; // TODO: Indent
-      case ParserTokenType.QuotedString:
+      case ASTNode.QuotedString:
         return `"${arg.value}"`;
-      case ParserTokenType.UnquotedString:
+      case ASTNode.UnquotedString:
         return arg.value;
       /*
       case ParserTokenType.VariableReference:
         return `\${${arg.name}}`;
         */
-      case ParserTokenType.Group:
+      case ASTNode.Group:
         return `${formatArgList(arg.value)}`;
-      case ParserTokenType.Bracketed:
+      case ASTNode.Bracketed:
         const eq = '='.repeat(arg.equals);
         return `[${eq}[${arg.value}]${eq}]`;
       default:
@@ -180,13 +180,13 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
     // that itself cannot be single-lined, we can't single line the entire list.
     let len = 1; // Account for the opening parenthesis
     for (const arg of argList.args) {
-      if (arg.type === ParserTokenType.BlockComment) {
+      if (arg.type === ASTNode.BlockComment) {
         return -1;
       }
       if (arg.tailComment && arg.tailComment.length > 0) {
         return -1;
       }
-      if (arg.type === ParserTokenType.Group) {
+      if (arg.type === ASTNode.Group) {
         const groupLen = singleLineLen(arg.value);
         if (groupLen < 0) {
           return -1;
@@ -212,7 +212,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
           first = false;
         }
         res += formatArg(arg);
-        if (arg.type !== ParserTokenType.BlockComment && arg.tailComment) {
+        if (arg.type !== ASTNode.BlockComment && arg.tailComment) {
           res += maybeTail(arg.tailComment, true);
         }
       }
@@ -225,7 +225,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
     lines.push(
       indent(
         formatArg(arg) +
-          (arg.type === ParserTokenType.BlockComment
+          (arg.type === ASTNode.BlockComment
             ? ''
             : maybeTail(arg.tailComment)),
       ),
@@ -302,19 +302,23 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
 
   function printStatement(stmt: Statement): void {
     switch (stmt.type) {
-      case ParserTokenType.CommandInvocation:
+      case ASTNode.CommandInvocation:
         printCommandInvocation(stmt);
         break;
-      case ParserTokenType.ConditionalBlock:
+      case ASTNode.ConditionalBlock:
         printConditionalBlock(stmt);
         break;
-      case ParserTokenType.PairedCall:
+      case ASTNode.PairedCall:
         printPairedCall(stmt);
         break;
-      case ParserTokenType.BlockComment:
-        lines.push(...indent(stmt.value.split('\n')));
+      case ASTNode.BlockComment:
+        if (!stmt.isBlank) {
+          lines.push(...indent(stmt.value.split('\n')));
+        } else {
+          lines.push('');
+        }
         break;
-      case ParserTokenType.Directive:
+      case ASTNode.Directive:
         lines.push(indent(stmt.value));
         break;
     }

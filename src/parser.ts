@@ -1,6 +1,6 @@
 import { TokenType, type TokenStream } from './tokenizer';
 
-export enum NumberedParserTokenType {
+export enum NumberedASTNode {
   QuotedString, // = 'QuotedString',
   UnquotedString, // = 'UnquotedString',
   VariableReference, // = 'VariableReference',
@@ -16,7 +16,7 @@ export enum NumberedParserTokenType {
   CMakeFile, // = 'CMakeFile',
 }
 
-export enum ParserTokenType {
+export enum ASTNode {
   QuotedString = 'QuotedString',
   UnquotedString = 'UnquotedString',
   VariableReference = 'VariableReference',
@@ -33,28 +33,28 @@ export enum ParserTokenType {
 }
 
 export type QuotedString = {
-  type: ParserTokenType.QuotedString;
+  type: ASTNode.QuotedString;
   value: string;
 };
 
 export type UnquotedString = {
-  type: ParserTokenType.UnquotedString;
+  type: ASTNode.UnquotedString;
   value: string;
 };
 
 export type VariableReference = {
-  type: ParserTokenType.VariableReference;
+  type: ASTNode.VariableReference;
   name: string;
 };
 
 export type BracketedString = {
-  type: ParserTokenType.Bracketed;
+  type: ASTNode.Bracketed;
   value: string;
   equals: number;
 };
 
 export type GroupedArg = {
-  type: ParserTokenType.Group;
+  type: ASTNode.Group;
   value: ArgList;
 };
 
@@ -76,14 +76,14 @@ export type ArgList = {
 };
 
 export type CommandInvocation = {
-  type: ParserTokenType.CommandInvocation;
+  type: ASTNode.CommandInvocation;
   name: string;
   args: ArgList;
   tailComment?: string;
 };
 
 export type ConditionalBlock = {
-  type: ParserTokenType.ConditionalBlock;
+  type: ASTNode.ConditionalBlock;
   condition: ArgList;
   body: Statement[];
   elseifBlocks: ElseIfBlock[];
@@ -94,21 +94,21 @@ export type ConditionalBlock = {
 };
 
 export type ElseIfBlock = {
-  type: ParserTokenType.ElseIfBlock;
+  type: ASTNode.ElseIfBlock;
   condition: ArgList;
   body: Statement[];
   tailComment?: string;
 };
 
 export type ElseBlock = {
-  type: ParserTokenType.ElseBlock;
+  type: ASTNode.ElseBlock;
   body: Statement[];
   elseArgs?: ArgList;
   tailComment?: string;
 };
 
 export type PairedCall = {
-  type: ParserTokenType.PairedCall;
+  type: ASTNode.PairedCall;
   open: string;
   close: string;
   params: ArgList;
@@ -119,12 +119,13 @@ export type PairedCall = {
 };
 
 export type BlockComment = {
-  type: ParserTokenType.BlockComment;
+  type: ASTNode.BlockComment;
   value: string;
+  isBlank: boolean;
 };
 
 export type Directive = {
-  type: ParserTokenType.Directive;
+  type: ASTNode.Directive;
   value: string;
 };
 
@@ -136,7 +137,7 @@ export type Statement =
   | Directive;
 
 export type CMakeFile = {
-  type: ParserTokenType.CMakeFile;
+  type: ASTNode.CMakeFile;
   statements: Statement[];
 };
 
@@ -146,7 +147,7 @@ export type ParserState = {
 };
 
 export function mkCMakeFile(statements: Statement[]): CMakeFile {
-  return { type: ParserTokenType.CMakeFile, statements };
+  return { type: ASTNode.CMakeFile, statements };
 }
 
 export function mkCommandInvocation(
@@ -154,15 +155,15 @@ export function mkCommandInvocation(
   args: ArgList,
   tailComment?: string,
 ): CommandInvocation {
-  return { type: ParserTokenType.CommandInvocation, name, args, tailComment };
+  return { type: ASTNode.CommandInvocation, name, args, tailComment };
 }
 
 export function mkQuotedString(value: string): QuotedString {
-  return { type: ParserTokenType.QuotedString, value };
+  return { type: ASTNode.QuotedString, value };
 }
 
 export function mkUnquotedString(value: string): UnquotedString {
-  return { type: ParserTokenType.UnquotedString, value };
+  return { type: ASTNode.UnquotedString, value };
 }
 
 /*
@@ -178,11 +179,11 @@ export function mkBracketed(value: string): BracketedString {
   }
   const equals = parseInt(value.substring(0, countPos), 10);
   const bracketedValue = value.substring(countPos + 1);
-  return { type: ParserTokenType.Bracketed, value: bracketedValue, equals };
+  return { type: ASTNode.Bracketed, value: bracketedValue, equals };
 }
 
 export function mkGroupedArg(value: ArgList): GroupedArg {
-  return { type: ParserTokenType.Group, value };
+  return { type: ASTNode.Group, value };
 }
 
 export function mkConditionalBlock(
@@ -195,7 +196,7 @@ export function mkConditionalBlock(
   endifTailComment?: string,
 ): ConditionalBlock {
   return {
-    type: ParserTokenType.ConditionalBlock,
+    type: ASTNode.ConditionalBlock,
     condition,
     body,
     elseifBlocks,
@@ -207,11 +208,15 @@ export function mkConditionalBlock(
 }
 
 export function mkCommentBlock(value: string): BlockComment {
-  return { type: ParserTokenType.BlockComment, value };
+  return { type: ASTNode.BlockComment, value, isBlank: false };
+}
+
+export function mkBlankLine(): BlockComment {
+  return { type: ASTNode.BlockComment, value: '', isBlank: true };
 }
 
 export function mkDirective(value: string): Directive {
-  return { type: ParserTokenType.Directive, value };
+  return { type: ASTNode.Directive, value };
 }
 
 export function mkElseIfBlock(
@@ -219,7 +224,7 @@ export function mkElseIfBlock(
   body: Statement[],
   tailComment?: string,
 ): ElseIfBlock {
-  return { type: ParserTokenType.ElseIfBlock, condition, body, tailComment };
+  return { type: ASTNode.ElseIfBlock, condition, body, tailComment };
 }
 
 export function mkElseBlock(
@@ -227,7 +232,7 @@ export function mkElseBlock(
   elseArgs?: ArgList,
   tailComment?: string,
 ): ElseBlock {
-  return { type: ParserTokenType.ElseBlock, body, elseArgs, tailComment };
+  return { type: ASTNode.ElseBlock, body, elseArgs, tailComment };
 }
 
 export function mkPairedCall(
@@ -240,7 +245,7 @@ export function mkPairedCall(
   endTailComment?: string,
 ): PairedCall {
   return {
-    type: ParserTokenType.PairedCall,
+    type: ASTNode.PairedCall,
     open,
     close,
     params,
@@ -285,6 +290,9 @@ function parseStatement(tokens: TokenStream, state: ParserState): Statement {
     }
   } else if (next.is(TokenType.Comment)) {
     return mkCommentBlock(tokens.consume().value!);
+  } else if (next.is(TokenType.EmptyLine)) {
+    tokens.consume();
+    return mkBlankLine();
   } else if (next.is(TokenType.Directive)) {
     return mkDirective(tokens.consume().value!);
   }
@@ -306,7 +314,10 @@ function parseArguments(tokens: TokenStream): ArgList {
     : undefined;
 
   while (!tokens.peek().isCloseParen()) {
-    args.push(parseArgument(tokens));
+    const arg = parseArgument(tokens);
+    if (arg !== undefined) {
+      args.push(arg);
+    }
   }
   tokens.expectCloseParen();
   return { args, prefixTailComment };
@@ -328,7 +339,7 @@ function parseGroupedArgs(tokens: TokenStream): GroupedArg {
   return mkGroupedArg(parseArguments(tokens));
 }
 
-function parseArgument(tokens: TokenStream): Argument {
+function parseArgument(tokens: TokenStream): Argument | undefined {
   const token = tokens.peek();
   switch (token.type) {
     case TokenType.Quoted:
@@ -345,6 +356,10 @@ function parseArgument(tokens: TokenStream): Argument {
     case TokenType.Comment:
       tokens.consume();
       return mkCommentBlock(token.value!);
+    case TokenType.EmptyLine:
+      // We don't respect empty line tokens in arguments; consume and skip them.
+      tokens.consume();
+      return undefined; 
     case TokenType.Paren:
       // Don't consume the token, as the group args parser will expect it
       return parseGroupedArgs(tokens);
@@ -400,7 +415,7 @@ function parseConditionalBlock(
             endifTailComment,
           );
       }
-    } else if (!next.isComment()) {
+    } else if (!next.isComment() && !next.is(TokenType.EmptyLine)) {
       throw new Error(`Unexpected token in conditional block: ${next}`);
     }
     body.push(parseStatement(tokens, state));
