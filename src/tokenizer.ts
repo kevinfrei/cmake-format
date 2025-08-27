@@ -13,6 +13,7 @@ export enum NumberedTokenType {
   Comment, // = 'comment',
   TailComment, // = 'tail_comment',
   Directive, // = 'directive',
+  EOL, // = 'eol',
   EOF, // = 'eof',
 }
 
@@ -26,6 +27,7 @@ export enum TokenType {
   Comment = 'comment',
   TailComment = 'tail_comment',
   Directive = 'directive',
+  EOL = 'eol',
   EOF = 'eof',
 }
 
@@ -197,6 +199,10 @@ export function MakeComment(value: string): Token {
 
 export function MakeEOF(): Token {
   return MakeToken(TokenType.EOF, '');
+}
+
+export function MakeEOL(): Token {
+  return MakeToken(TokenType.EOL, '');
 }
 
 export function MakeTokenStream(input: string): TokenStream {
@@ -372,6 +378,11 @@ export function MakeTokenStream(input: string): TokenStream {
     let curTok = '';
     for (lineNumber = 0; lineNumber < lines.length; lineNumber++) {
       const line = lines[lineNumber]!;
+      if (line.trim().length === 0) {
+        MaybePush(curTok);
+        pushToken(MakeEOL());
+        continue;
+      }
       for (linePos = 0; linePos < line.length; linePos++) {
         switch (state.state) {
           case LineState.Clear:
