@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { ParserTokenType } from '../parser';
+import { ASTNode } from '../parser';
 import { parseString, parseTestFile } from './test-helpers';
 
 describe('Parser', () => {
@@ -11,10 +11,10 @@ describe('Parser', () => {
   test('parses macros and conditionals', () => {
     const ast = parseTestFile('grammar.cmake');
     expect(
-      ast.statements.some((s) => s.type === ParserTokenType.PairedCall),
+      ast.statements.some((s) => s.type === ASTNode.PairedCall),
     ).toBeTrue();
     expect(
-      ast.statements.some((s) => s.type === ParserTokenType.ConditionalBlock),
+      ast.statements.some((s) => s.type === ASTNode.ConditionalBlock),
     ).toBeTrue();
   });
 
@@ -44,7 +44,7 @@ describe('Parser', () => {
       'if(TRUE)\n#[==[ Nothing Here\n]==]\nendif()\n';
     const ast = parseString(input);
     expect(ast.statements.length).toBe(2);
-    expect(ast.statements[0]!.type).toBe(ParserTokenType.PairedCall);
-    expect(ast.statements[1]!.type).toBe(ParserTokenType.ConditionalBlock);
+    expect(ast.statements[0]!.type).toBe(ASTNode.PairedCall);
+    expect(ast.statements[1]!.type).toBe(ASTNode.ConditionalBlock);
   });
 });
