@@ -225,9 +225,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
     lines.push(
       indent(
         formatArg(arg) +
-          (arg.type === ASTNode.BlockComment
-            ? ''
-            : maybeTail(arg.tailComment)),
+          (arg.type === ASTNode.BlockComment ? '' : maybeTail(arg.tailComment)),
       ),
     );
   }
@@ -339,5 +337,12 @@ export function printCMakeToString(
   ast: CMakeFile,
   config: Partial<Configuration> = {},
 ): string {
-  return PrintAST(ast, config).join(getEOL(config));
+  const eol = getEOL(config);
+  const printed = PrintAST(ast, config).join(eol);
+  // If it's an empty file, leave it alone,
+  // but we always end with a new line...
+  if (printed.trim().length === 0) {
+    return '';
+  }
+  return printed.endsWith(eol) ? printed : printed + eol;
 }

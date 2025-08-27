@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { parseCMakeFile } from '../parser';
 import { printCMake, printCMakeToString } from '../printer';
+import { TokenType } from '../tokenizer';
 import {
   compareTokenStreams,
   parseString,
@@ -19,10 +20,10 @@ describe('Pretty Printer simplistic stuff', () => {
     expect(printString('').trim()).toBe('');
     const [tokens, original] = tokenizeString('\n\n  \n\t\n');
     const output = parseCMakeFile(tokens, original);
-    const printed = printCMake(output);
-    const [printedTokens] = tokenizeString(printed.join('\n'));
-    expect(tokens.count()).toBe(1);
-    expect(printed.join('\n').trim()).toBe('');
+    const printed = printCMakeToString(output);
+    const [printedTokens] = tokenizeString(printed);
+    expect(tokens.count()).toBe(2);
+    expect(printed.trim()).toBe('');
     expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
   });
   test('preserves comments', () => {
