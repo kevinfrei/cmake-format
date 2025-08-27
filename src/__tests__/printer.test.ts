@@ -1,13 +1,14 @@
 import { describe, expect, test } from 'bun:test';
+import { parseCMakeFile } from '../parser';
+import { printCMake, printCMakeToString } from '../printer';
 import {
   compareTokenStreams,
-  printTestFile,
+  parseString,
   printString,
-  tokenizeTestFile,
+  printTestFile,
   tokenizeString,
+  tokenizeTestFile,
 } from './test-helpers';
-import { parseCMakeFile } from '../parser';
-import { printCMake } from '../printer';
 
 describe('Pretty Printer simplistic stuff', () => {
   test('prints basic command', () => {
@@ -19,11 +20,10 @@ describe('Pretty Printer simplistic stuff', () => {
     const [tokens, original] = tokenizeString('\n\n  \n\t\n');
     const output = parseCMakeFile(tokens, original);
     const printed = printCMake(output);
-    const [printedTokens, ] = tokenizeString(printed.join('\n'));
+    const [printedTokens] = tokenizeString(printed.join('\n'));
     expect(tokens.count()).toBe(1);
     expect(printed.join('\n').trim()).toBe('');
     expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
-
   });
   test('preserves comments', () => {
     const output = printTestFile('comments.cmake');
@@ -79,5 +79,13 @@ describe('Token Stream preservation', () => {
     expect(output).toBeDefined();
     const [printedTokens] = tokenizeString(output);
     expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
+  });
+  test('check for EOL settings', () => {
+    const ast = parseString('if(TRUE)\n# nothing\nendif()');
+    const outputUnix = printCMakeToString(ast, { crlf: false });
+    const outputWindows = printCMakeToString(ast, { crlf: true });
+    expect(outputUnix).toContain('\n');
+    expect(outputUnix).not.toContain('\r\n');
+    expect(outputWindows).toContain('\r\n');
   });
 });

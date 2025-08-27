@@ -161,9 +161,11 @@ export function MakeParen(value: '(' | ')'): Token {
   return MakeToken(TokenType.Paren, value);
 }
 
+/*
 export function MakeCurly(value: '{' | '}'): Token {
   return MakeToken(TokenType.Curly, value);
 }
+*/
 
 export function MakeQuoted(value: string): Token {
   return MakeToken(TokenType.Quoted, value);

@@ -1,3 +1,4 @@
+import { isString } from '@freik/typechk';
 import type {
   ArgList,
   Argument,
@@ -20,20 +21,29 @@ export type Configuration = {
     in various commands to also affect indentation
     Something like this:
   */
-  reflowComments: boolean;
+  reflowComments: boolean; // NYI
   commands: {
     [commandName: string]: {
       // These may affect indentation
       controlKeywords?: string[];
+      // This indents after the specified number of arguments
+      indent?: number;
       // These just get capitalized
       options?: string[];
     };
   };
+  /*
+   * This isn't yet fully formed in my head
+   *
   sort: {
     // The number of args to skip before sorting the arguments
-    [commandName: string]: number;
+    [commandMatch: string]: { // command names
+      match: string; // A string or regex to match arguments
+      skip: number;  // Number of arguments to skip before sorting
+    };
   };
-}
+   */
+};
 
 /*
 
@@ -94,14 +104,17 @@ const defaultCfg: Configuration = {
     target_compile_definitions: {
       controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
     },
+    set: { indent: 1 },
   },
-  sort : {
-    set: 1
-  }
+  /*
+  sort: {
+    set: { skip: 1 },
+  },
+  */
 };
 
-export function getEOL(): string {
-  return defaultCfg.crlf ? '\r\n' : '\n';
+export function getEOL(config: Partial<Configuration>): string {
+  return (config.crlf ?? defaultCfg.crlf) ? '\r\n' : '\n';
 }
 
 function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
@@ -109,9 +122,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
   let level: number = 0;
   const cfg = { ...defaultCfg, ...config };
 
-  let indentSpace = cfg.useSpaces
-    ? ' '.repeat(cfg.indentSize)
-    : '\t';
+  let indentSpace = cfg.useSpaces ? ' '.repeat(cfg.indentSize) : '\t';
 
   function indent(lines: string): string;
   function indent(lines: string[]): string[];
@@ -138,24 +149,27 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
       case ParserTokenType.VariableReference:
         return `\${${arg.name}}`;
       case ParserTokenType.Group:
-        return `(${formatArgList(arg.value)})`;
+        return `${formatArgList(arg.value)}`;
       case ParserTokenType.Bracketed:
         const eq = '='.repeat(arg.equals);
         return `[${eq}[${arg.value}]${eq}]`;
     }
   }
 
-  function formatArgList(argList?: ArgList): string {
-    if (
-      !argList ||
-      (argList.args.length === 0 && argList.prefixTailComment === undefined)
-    ) {
-      return '';
-    }
+  // Nested arg list overload: No indentation
+  function formatArgList(argList: ArgList): string;
+  // Command invocation overload: This one indents
+  function formatArgList(prefix: string, argList: ArgList): string;
+
+  function formatArgList(
+    prefixOrArgList: string | ArgList,
+    orArgList?: ArgList,
+  ): string {
+    const prefix = isString(prefixOrArgList) ? prefixOrArgList : '';
+    const argList: ArgList = isString(prefixOrArgList)
+      ? (orArgList as ArgList)
+      : prefixOrArgList;
     let res = '';
-    if (!argList.args) {
-      return res;
-    }
     let first = true;
     for (const arg of argList.args) {
       if (!first) {
@@ -171,29 +185,24 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
         res += ` #${arg.tailComment}\n`;
       }
     }
-    return res;
+    return (prefix !== '' ? indent(prefix) : '') + `(${res})`;
   }
 
   function printCommandInvocation(cmd: CommandInvocation): void {
-    const args = formatArgList(cmd.args);
-    const line = indent(`${cmd.name}(${args})`);
+    const line = formatArgList(cmd.name, cmd.args);
     lines.push(cmd.tailComment ? `${line} ${cmd.tailComment}` : line);
   }
 
   function printConditionalBlock(cond: ConditionalBlock): void {
     lines.push(
-      indent(
-        `if(${formatArgList(cond.condition)}) ${cond.ifTailComment || ''}`,
-      ),
+      `${formatArgList('if', cond.condition)} ${cond.ifTailComment || ''}`,
     );
     level++;
     cond.body.map(printStatement);
     level--;
     for (const elseif of cond.elseifBlocks) {
       lines.push(
-        indent(
-          `elseif(${formatArgList(elseif.condition)}) ${elseif.tailComment || ''}`,
-        ),
+        `${formatArgList('elseif', elseif.condition)} ${elseif.tailComment || ''}`,
       );
       level++;
       elseif.body.map(printStatement);
@@ -202,9 +211,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
 
     if (cond.elseBlock) {
       lines.push(
-        indent(
-          `else(${formatArgList(cond.elseBlock?.elseArgs ?? undefined)}) ${cond.elseBlock.tailComment || ''}`,
-        ),
+        `${formatArgList('else', cond.elseBlock?.elseArgs)} ${cond.elseBlock.tailComment || ''}`,
       );
       level++;
       cond.elseBlock.body.map(printStatement);
@@ -212,25 +219,19 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
     }
 
     lines.push(
-      indent(
-        `endif(${formatArgList(cond.endifArgs)}) ${cond.endifTailComment || ''}`,
-      ),
+      `${formatArgList('endif', cond.endifArgs)} ${cond.endifTailComment || ''}`,
     );
   }
 
   function printPairedCall(call: PairedCall): void {
     lines.push(
-      indent(
-        `${call.open}(${formatArgList(call.params)}) ${call.startTailComment || ''}`,
-      ),
+      `${formatArgList(call.open, call.params)} ${call.startTailComment || ''}`,
     );
     level++;
     call.body.map(printStatement);
     level--;
     lines.push(
-      indent(
-        `${call.close}(${formatArgList(call.endArgs)}) ${call.endTailComment || ''}`,
-      ),
+      `${formatArgList(call.close, call.endArgs)} ${call.endTailComment || ''}`,
     );
   }
 
@@ -257,6 +258,17 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
   ast.statements.forEach((stmt) => printStatement(stmt));
   return lines;
 }
-export function printCMake(ast: CMakeFile, config: Partial<Configuration>={}): string[] {
+
+export function printCMake(
+  ast: CMakeFile,
+  config: Partial<Configuration> = {},
+): string[] {
   return PrintAST(ast, config);
+}
+
+export function printCMakeToString(
+  ast: CMakeFile,
+  config: Partial<Configuration> = {},
+): string {
+  return PrintAST(ast, config).join(getEOL(config));
 }
