@@ -1,4 +1,4 @@
-import { isString } from '@freik/typechk';
+import { isUndefined } from '@freik/typechk';
 import type {
   ArgList,
   Argument,
@@ -138,6 +138,11 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
     return cfg.printWidth - cfg.indentSize * level;
   }
 
+  function maybeTail(comment?: string, eol: boolean = false): string {
+    if (!comment) return '';
+    return eol ? ` #${comment}${getEOL}` : ` #${comment}`;
+  }
+
   function formatArg(arg: Argument): string {
     switch (arg.type) {
       case ParserTokenType.BlockComment:
@@ -146,63 +151,95 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
         return `"${arg.value}"`;
       case ParserTokenType.UnquotedString:
         return arg.value;
+      /*
       case ParserTokenType.VariableReference:
         return `\${${arg.name}}`;
+        */
       case ParserTokenType.Group:
         return `${formatArgList(arg.value)}`;
       case ParserTokenType.Bracketed:
         const eq = '='.repeat(arg.equals);
         return `[${eq}[${arg.value}]${eq}]`;
+      default:
+        throw new Error(`Unknown argument type: ${arg.type}`);
     }
   }
 
-  // Nested arg list overload: No indentation
-  function formatArgList(argList: ArgList): string;
-  // Command invocation overload: This one indents
-  function formatArgList(prefix: string, argList: ArgList): string;
+  // Determines if an arg list *can* be on a single line
+  function singleLineLen(argList?: ArgList): number {
+    if (!argList) {
+      return -1;
+    }
+    // If there's a prefix tail comment, we can't single line it
+    // command (# this is a comment
+    //          ^ we can't put this on the same line as the closing parenthesis
+    if (argList.prefixTailComment) {
+      return -1;
+    }
+    // If any argument is a block comment, has a tail comment, or is a grouped argument
+    // that itself cannot be single-lined, we can't single line the entire list.
+    let len = 1; // Account for the opening parenthesis
+    for (const arg of argList.args) {
+      if (arg.type === ParserTokenType.BlockComment) {
+        return -1;
+      }
+      if (arg.tailComment && arg.tailComment.length > 0) {
+        return -1;
+      }
+      if (arg.type === ParserTokenType.Group) {
+        const groupLen = singleLineLen(arg.value);
+        if (groupLen < 0) {
+          return -1;
+        }
+        len += groupLen;
+      } else {
+        len += formatArg(arg).length;
+      }
+      len++; // Accounts for either the space, or closing parenthesis
+    }
+    return len === 1 ? 2 : len; // Handle '()' specially...
+  }
 
-  function formatArgList(
-    prefixOrArgList: string | ArgList,
-    orArgList?: ArgList,
-  ): string {
-    const prefix = isString(prefixOrArgList) ? prefixOrArgList : '';
-    const argList: ArgList = isString(prefixOrArgList)
-      ? (orArgList as ArgList)
-      : prefixOrArgList;
+  function formatArgList(argList?: ArgList): string {
     let res = '';
     let first = true;
-    for (const arg of argList.args) {
-      if (!first) {
-        res += ' ';
-      } else {
-        if (argList.prefixTailComment) {
-          res += ` #${argList.prefixTailComment}\n`;
+    if (!isUndefined(argList)) {
+      for (const arg of argList.args) {
+        if (!first) {
+          res += ' ';
+        } else {
+          res += maybeTail(argList.prefixTailComment, true);
+          first = false;
         }
-        first = false;
-      }
-      res += formatArg(arg);
-      if (arg.type !== ParserTokenType.BlockComment && arg.tailComment) {
-        res += ` #${arg.tailComment}\n`;
+        res += formatArg(arg);
+        if (arg.type !== ParserTokenType.BlockComment && arg.tailComment) {
+          res += maybeTail(arg.tailComment, true);
+        }
       }
     }
-    return (prefix !== '' ? indent(prefix) : '') + `(${res})`;
+    return `(${res})`;
+  }
+
+  function formatInvoke(prefix: string, argList?: ArgList): string {
+    return (prefix !== '' ? indent(prefix) : '') + formatArgList(argList);
   }
 
   function printCommandInvocation(cmd: CommandInvocation): void {
-    const line = formatArgList(cmd.name, cmd.args);
-    lines.push(cmd.tailComment ? `${line} ${cmd.tailComment}` : line);
+    const line = formatInvoke(cmd.name, cmd.args);
+    lines.push(line + maybeTail(cmd.tailComment));
   }
 
   function printConditionalBlock(cond: ConditionalBlock): void {
     lines.push(
-      `${formatArgList('if', cond.condition)} ${cond.ifTailComment || ''}`,
+      formatInvoke('if', cond.condition) + maybeTail(cond.ifTailComment),
     );
     level++;
     cond.body.map(printStatement);
     level--;
     for (const elseif of cond.elseifBlocks) {
       lines.push(
-        `${formatArgList('elseif', elseif.condition)} ${elseif.tailComment || ''}`,
+        formatInvoke('elseif', elseif.condition) +
+          maybeTail(elseif.tailComment),
       );
       level++;
       elseif.body.map(printStatement);
@@ -211,7 +248,8 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
 
     if (cond.elseBlock) {
       lines.push(
-        `${formatArgList('else', cond.elseBlock?.elseArgs)} ${cond.elseBlock.tailComment || ''}`,
+        formatInvoke('else', cond.elseBlock?.elseArgs) +
+          maybeTail(cond.elseBlock.tailComment),
       );
       level++;
       cond.elseBlock.body.map(printStatement);
@@ -219,19 +257,19 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
     }
 
     lines.push(
-      `${formatArgList('endif', cond.endifArgs)} ${cond.endifTailComment || ''}`,
+      formatInvoke('endif', cond.endifArgs) + maybeTail(cond.endifTailComment),
     );
   }
 
   function printPairedCall(call: PairedCall): void {
     lines.push(
-      `${formatArgList(call.open, call.params)} ${call.startTailComment || ''}`,
+      formatInvoke(call.open, call.params) + maybeTail(call.startTailComment),
     );
     level++;
     call.body.map(printStatement);
     level--;
     lines.push(
-      `${formatArgList(call.close, call.endArgs)} ${call.endTailComment || ''}`,
+      formatInvoke(call.close, call.endArgs) + maybeTail(call.endTailComment),
     );
   }
 

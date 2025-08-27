@@ -2,7 +2,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseCMakeFile } from './src/parser';
-import { getEOL, printCMake } from './src/printer';
+import { printCMakeToString } from './src/printer';
 import { MakeTokenStream } from './src/tokenizer';
 
 const appName = process.argv[1]!.split(/[\\/]/).pop();
@@ -14,11 +14,11 @@ function usage() {
   process.exit(1);
 }
 
-export function printFullFile(path: string): string[] {
+export function printFullFile(path: string): string {
   const content = readFileSync(path, 'utf-8');
   const tokens = MakeTokenStream(content);
   const ast = parseCMakeFile(tokens, content.split('\n'));
-  return printCMake(ast);
+  return printCMakeToString(ast);
 }
 
 if (
@@ -37,11 +37,11 @@ const filePaths = inPlace ? process.argv.slice(3) : process.argv.slice(2);
 filePaths.forEach((filePath) => {
   const lines = printFullFile(filePath);
   if (!inPlace) {
-    lines.forEach((line) => console.log(line));
+    console.log(lines);
   } else {
     // TODO: Handle UTF-8 properly. I still need to use binary mode so that
     // Windows won't add a CRLF line ending when the file is written with LF
     // endings. The text/utf-8 output code would foil it.
-    writeFileSync(filePath, lines.join(getEOL()), 'binary');
+    writeFileSync(filePath, lines, 'binary');
   }
 });
