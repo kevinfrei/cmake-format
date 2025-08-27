@@ -37,4 +37,14 @@ describe('Parser', () => {
     const input = 'if(TRUE)\n# comment';
     expect(() => parseString(input)).toThrow();
   });
+
+  test('block/endblock pairing', () => {
+    const input =
+      'block()\n# stuff in here?\n # nope!\nendblock()\n' +
+      'if(TRUE)\n#[==[ Nothing Here\n]==]\nendif()\n';
+    const ast = parseString(input);
+    expect(ast.statements.length).toBe(2);
+    expect(ast.statements[0]!.type).toBe(ParserTokenType.PairedCall);
+    expect(ast.statements[1]!.type).toBe(ParserTokenType.ConditionalBlock);
+  });
 });

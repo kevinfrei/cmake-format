@@ -165,9 +165,11 @@ export function mkUnquotedString(value: string): UnquotedString {
   return { type: ParserTokenType.UnquotedString, value };
 }
 
+/*
 export function mkVariableReference(name: string): VariableReference {
   return { type: ParserTokenType.VariableReference, name };
 }
+*/
 
 export function mkBracketed(value: string): BracketedString {
   const countPos = value.indexOf(':');
@@ -335,9 +337,11 @@ function parseArgument(tokens: TokenStream): Argument {
     case TokenType.Identifier:
       tokens.consume();
       return maybeTailComment(tokens, mkUnquotedString(token.value!));
+    /*
     case TokenType.Variable:
       tokens.consume();
       return maybeTailComment(tokens, mkVariableReference(token.value!));
+    */
     case TokenType.Comment:
       tokens.consume();
       return mkCommentBlock(token.value!);
