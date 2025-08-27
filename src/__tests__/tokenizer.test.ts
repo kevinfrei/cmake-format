@@ -74,6 +74,7 @@ describe('Basic Tokenization', () => {
 
   test('token end of stream failure', () => {
     const tokens = MakeTokenStream('');
+    expect(tokens.expect(TokenType.EmptyLine)).toBeDefined();
     expect(tokens.expect(TokenType.EOF)).toBeDefined();
     expect(() => tokens.peek()).toThrow();
   });

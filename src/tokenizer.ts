@@ -67,6 +67,7 @@ export type TokenStream = {
   expectIdentifier: (val?: string) => string;
   expectOpenParen: () => boolean;
   expectCloseParen: () => boolean;
+  reset: () => void;
   /*
     expectOpenCurly: () => boolean;
     expectCloseCurly: () => boolean;
@@ -201,7 +202,7 @@ export function MakeEOF(): Token {
   return MakeToken(TokenType.EOF, '');
 }
 
-export function MakeEOL(): Token {
+export function MakeEmptyLine(): Token {
   return MakeToken(TokenType.EmptyLine, '');
 }
 
@@ -218,10 +219,7 @@ export function MakeTokenStream(input: string): TokenStream {
   }
 
   function prevToken(): Token {
-    if (curPos - 1 < 0) {
-      return MakeEOF();
-    }
-    return tokens[curPos - 1]!;
+    return tokens.length === 0 ? MakeEOF() : tokens[tokens.length - 1]!;
   }
 
   function history(num: number): Token[] {
@@ -385,11 +383,11 @@ export function MakeTokenStream(input: string): TokenStream {
     let curTok = '';
     for (lineNumber = 0; lineNumber < lines.length; lineNumber++) {
       const line = lines[lineNumber]!;
-      if (line.trim().length === 0) {
+      if (state.state === LineState.Clear && line.trim().length === 0) {
         // We want to treat empty lines as significant, but only *single* EOL's.
-        MaybePush(curTok);
+        curTok = MaybePush(curTok);
         if (prevToken().type !== TokenType.EmptyLine) {
-          pushToken(MakeEOL());
+          pushToken(MakeEmptyLine());
         }
         continue;
       }
@@ -489,5 +487,8 @@ export function MakeTokenStream(input: string): TokenStream {
     expectCloseParen: () => expect(TokenType.Paren, ')').isCloseParen(),
     history,
     count: () => tokens.length,
+    reset: () => {
+      curPos = 0;
+    },
   };
 }

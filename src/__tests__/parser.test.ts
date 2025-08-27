@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { ASTNode } from '../parser';
+import { ASTNode, type BlockComment } from '../parser';
 import { parseString, parseTestFile } from './test-helpers';
 
 describe('Parser', () => {
@@ -43,8 +43,10 @@ describe('Parser', () => {
       'block()\n# stuff in here?\n # nope!\nendblock()\n' +
       'if(TRUE)\n#[==[ Nothing Here\n]==]\nendif()\n';
     const ast = parseString(input);
-    expect(ast.statements.length).toBe(2);
+    expect(ast.statements.length).toBe(3);
     expect(ast.statements[0]!.type).toBe(ASTNode.PairedCall);
     expect(ast.statements[1]!.type).toBe(ASTNode.ConditionalBlock);
+    expect(ast.statements[2]!.type).toBe(ASTNode.BlockComment);
+    expect((ast.statements[2] as BlockComment).isBlank).toBeTrue();
   });
 });

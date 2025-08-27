@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import type { CMakeFile } from '../parser';
 import { parseCMakeFile } from '../parser';
-import { printCMake } from '../printer';
+import { printCMake, printCMakeToString } from '../printer';
 import { MakeTokenStream, type TokenStream } from '../tokenizer';
 
 export function getTestFileName(name: string): string {
@@ -45,8 +45,8 @@ export function printTestFile(filePath: string): string {
   return printCMake(parseTestFile(filePath)).join('\n');
 }
 
-export function printFullFile(path: string): string[] {
-  return printCMake(parseString(readFileSync(path, 'utf-8')));
+export function printFullFile(path: string): string {
+  return printCMakeToString(parseString(readFileSync(path, 'utf-8')));
 }
 
 export function compareTokenStreams(
@@ -56,6 +56,8 @@ export function compareTokenStreams(
   if (streamA.count() !== streamB.count()) {
     return false;
   }
+  streamA.reset();
+  streamB.reset();
   for (let i = 0; i < streamA.count(); i++) {
     const tokenA = streamA.consume();
     const tokenB = streamB.consume();
@@ -68,7 +70,7 @@ export function compareTokenStreams(
 
 export function compareTokensFile(filename: string): boolean {
   const content = loadFile(filename);
-  const [streamA, ] = tokenizeString(content);
-  const [streamB, ] = tokenizeString(printString(content));
+  const [streamA] = tokenizeString(content);
+  const [streamB] = tokenizeString(printString(content));
   return compareTokenStreams(streamA, streamB);
 }
