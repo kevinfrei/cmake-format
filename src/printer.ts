@@ -168,7 +168,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
   // Determines if an arg list *can* be on a single line
   function singleLineLen(argList?: ArgList): number {
     if (!argList) {
-      return -1;
+      return 2; // ()'s
     }
     // If there's a prefix tail comment, we can't single line it
     // command (# this is a comment
@@ -220,8 +220,35 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
     return `(${res})`;
   }
 
+  // TODO: Handle grouped arg that needs splitting
+  function formatArgLine(arg: Argument): void {
+    lines.push(
+      indent(
+        formatArg(arg) +
+          (arg.type === ParserTokenType.BlockComment
+            ? ''
+            : maybeTail(arg.tailComment)),
+      ),
+    );
+  }
+
+  function formatArgListLines(argList?: ArgList): void {
+    if (!argList) return;
+    argList.args.forEach(formatArgLine);
+  }
+
+  // Returns the *last* line of the code being formatted
   function formatInvoke(prefix: string, argList?: ArgList): string {
-    return (prefix !== '' ? indent(prefix) : '') + formatArgList(argList);
+    const single = singleLineLen(argList);
+    if (single > 0 && availableWidth() >= single + prefix.length) {
+      return (prefix !== '' ? indent(prefix) : '') + formatArgList(argList);
+    }
+    // It's on multiple lines.
+    lines.push(indent(prefix + '(' + maybeTail(argList?.prefixTailComment)));
+    level++;
+    formatArgListLines(argList);
+    level--;
+    return ')';
   }
 
   function printCommandInvocation(cmd: CommandInvocation): void {

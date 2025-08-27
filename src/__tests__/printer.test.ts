@@ -49,6 +49,11 @@ describe('Token Stream preservation', () => {
     const [tokens, rawStrings] = tokenizeTestFile('cassette.cmake');
     const output = printString(rawStrings.join('\n'));
     expect(output).toBeDefined();
+    const lines = output.split('\n');
+    lines.forEach((line) => {
+      expect(line).toBeDefined();
+      expect(line.length).toBeLessThan(81);
+    });
     const [printedTokens] = tokenizeString(output);
     expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
   });
@@ -56,6 +61,11 @@ describe('Token Stream preservation', () => {
     const [tokens, rawStrings] = tokenizeTestFile('cassette-cpp.cmake');
     const output = printString(rawStrings.join('\n'));
     expect(output).toBeDefined();
+    const lines = output.split('\n');
+    lines.forEach((line) => {
+      expect(line).toBeDefined();
+      expect(line.length).toBeLessThan(81);
+    });
     const [printedTokens] = tokenizeString(output);
     expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
   });
@@ -63,6 +73,11 @@ describe('Token Stream preservation', () => {
     const [tokens, rawStrings] = tokenizeTestFile('cassette-cpp-musicdb.cmake');
     const output = printString(rawStrings.join('\n'));
     expect(output).toBeDefined();
+    const lines = output.split('\n');
+    lines.forEach((line) => {
+      expect(line).toBeDefined();
+      expect(line.length).toBeLessThan(81);
+    });
     const [printedTokens] = tokenizeString(output);
     expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
   });
@@ -70,6 +85,11 @@ describe('Token Stream preservation', () => {
     const [tokens, rawStrings] = tokenizeTestFile('cassette-cpp-test.cmake');
     const output = printString(rawStrings.join('\n'));
     expect(output).toBeDefined();
+    const lines = output.split('\n');
+    lines.forEach((line) => {
+      expect(line).toBeDefined();
+      expect(line.length).toBeLessThan(81);
+    });
     const [printedTokens] = tokenizeString(output);
     expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
   });
@@ -77,6 +97,11 @@ describe('Token Stream preservation', () => {
     const [tokens, rawStrings] = tokenizeTestFile('cassette-cpp-tools.cmake');
     const output = printString(rawStrings.join('\n'));
     expect(output).toBeDefined();
+    const lines = output.split('\n');
+    lines.forEach((line) => {
+      expect(line).toBeDefined();
+      expect(line.length).toBeLessThan(81);
+    });
     const [printedTokens] = tokenizeString(output);
     expect(compareTokenStreams(tokens, printedTokens)).toBeTrue();
   });
