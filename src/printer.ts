@@ -314,7 +314,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
         }
         break;
       case ASTNode.Directive:
-        lines.push(indent(stmt.value));
+        lines.push(indent(`# ${stmt.value}`));
         break;
     }
   }
