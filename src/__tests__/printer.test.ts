@@ -108,8 +108,8 @@ describe('Token Stream preservation', () => {
   });
   test('check for EOL settings', () => {
     const ast = parseString('if(TRUE)\n# nothing\nendif()');
-    const outputUnix = printCMakeToString(ast, { crlf: false });
-    const outputWindows = printCMakeToString(ast, { crlf: true });
+    const outputUnix = printCMakeToString(ast, { endOfLine: false });
+    const outputWindows = printCMakeToString(ast, { endOfLine: true });
     expect(outputUnix).toContain('\n');
     expect(outputUnix).not.toContain('\r\n');
     expect(outputWindows).toContain('\r\n');

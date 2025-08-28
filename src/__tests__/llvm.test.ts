@@ -1,7 +1,7 @@
+import { isUndefined } from '@freik/typechk';
 import { expect, test } from 'bun:test';
 import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
-import { isUndefined } from '../helpers';
 import {
   compareTokensFile,
   llvmRepoExists,

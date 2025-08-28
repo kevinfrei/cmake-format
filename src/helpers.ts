@@ -22,11 +22,3 @@ export function expando(pathsOrGlobs: string[]): string[] {
     })
     .flat();
 }
-
-export function isUndefined(value: any): value is undefined {
-  return value === undefined;
-}
-
-export function isString(value: any): value is string {
-  return typeof value === 'string';
-}
