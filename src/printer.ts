@@ -1,4 +1,5 @@
-import { isUndefined } from './helpers';
+import { isUndefined } from '@freik/typechk';
+import { type Configuration, defaultCfg, getEOL } from './config';
 import type {
   ArgList,
   Argument,
@@ -10,119 +11,12 @@ import type {
 } from './parser';
 import { ASTNode } from './parser';
 
-export type Configuration = {
-  useSpaces: boolean;
-  indentSize: number;
-  crlf: boolean;
-  printWidth: number;
-  /*
-    Any other config stuff belongs in here.
-    I feel like I should probably have the ability to use keywords
-    in various commands to also affect indentation
-    Something like this:
-  */
-  reflowComments: boolean; // NYI
-  commands: {
-    [commandName: string]: {
-      // These may affect indentation
-      controlKeywords?: string[];
-      // This indents after the specified number of arguments
-      indent?: number;
-      // These just get capitalized
-      options?: string[];
-    };
-  };
-  /*
-   * This isn't yet fully formed in my head
-   *
-  sort: {
-    // The number of args to skip before sorting the arguments
-    [commandMatch: string]: { // command names
-      match: string; // A string or regex to match arguments
-      skip: number;  // Number of arguments to skip before sorting
-    };
-  };
-   */
-};
-
-/*
-
-Style guide:
-
-*************************************
-***   THIS ONE    ***  FALL-BACK  ***
-*************************************
-*** set(file_list *** set(        ***
-***   foo.cpp     ***   file_list ***
-***   bar.cpp     ***   foo.cpp   ***
-*** )             ***   bar.cpp   ***
-***               *** )           ***
-*************************************
-
-*/
-// TODO: Put this stuff into a configuration file
-const defaultCfg: Configuration = {
-  useSpaces: true,
-  indentSize: 2,
-  crlf: false, // This one doesn't much matter for console.log output
-  printWidth: 80,
-  reflowComments: false,
-  commands: {
-    add_library: {
-      controlKeywords: [
-        'STATIC',
-        'SHARED',
-        'MODULE',
-        'OBJECT',
-        'INTERFACE',
-        'UNKNOWN',
-        'ALIAS',
-      ],
-      options: ['GLOBAL', 'EXCLUDE_FROM_ALL', 'IMPORTED'],
-    },
-    add_executable: {
-      options: [
-        'WIN32',
-        'MACOSX_BUNDLE',
-        'EXCLUDE_FROM_ALL',
-        'IMPORTED',
-        'ALIAS',
-      ],
-    },
-    target_sources: {
-      controlKeywords: [
-        'INTERFACE',
-        'PUBLIC',
-        'PRIVATE',
-        'FILE_SET',
-        'TYPE',
-        'BASE_DIRS',
-        'FILES',
-      ],
-      options: ['HEADERS', 'CXX_MODULES'],
-    },
-    target_compile_definitions: {
-      controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
-    },
-    set: { indent: 1 },
-  },
-  /*
-  sort: {
-    set: { skip: 1 },
-  },
-  */
-};
-
-export function getEOL(config: Partial<Configuration>): string {
-  return (config.crlf ?? defaultCfg.crlf) ? '\r\n' : '\n';
-}
-
 function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
   const lines: string[] = [];
   let level: number = 0;
   const cfg = { ...defaultCfg, ...config };
 
-  let indentSpace = cfg.useSpaces ? ' '.repeat(cfg.indentSize) : '\t';
+  let indentSpace = cfg.useTabs ? '\t' : ' '.repeat(cfg.tabWidth);
 
   function indent(lines: string): string;
   function indent(lines: string[]): string[];
@@ -135,7 +29,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
   }
 
   function availableWidth(): number {
-    return cfg.printWidth - cfg.indentSize * level;
+    return cfg.printWidth - cfg.tabWidth * level;
   }
 
   function maybeTail(comment?: string, eol: boolean = false): string {

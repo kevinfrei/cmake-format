@@ -1,6 +1,6 @@
 // Tokenizer types
 
-import { isString, isUndefined } from './helpers';
+import { isString, isUndefined } from '@freik/typechk';
 
 export const enum TokenType {
   Identifier = 'identifier',

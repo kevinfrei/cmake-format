@@ -3,6 +3,9 @@
   "workspaces": {
     "": {
       "name": "@freik/passable",
+      "dependencies": {
+        "@freik/typechk": "^0.9.0",
+      },
       "devDependencies": {
         "@freik/workspace": "^0.6.5",
         "@types/bun": "latest",
@@ -61,6 +64,8 @@
     "@esbuild/win32-ia32": ["@esbuild/win32-ia32@0.23.1", "", { "os": "win32", "cpu": "ia32" }, "sha512-BcaL0Vn6QwCwre3Y717nVHZbAa4UBEigzFm6VdsVdT/MbZ38xoj1X9HPkZhbmaBGUD1W8vxAfffbDe8bA6AKnQ=="],
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.23.1", "", { "os": "win32", "cpu": "x64" }, "sha512-BHpFFeslkWrXWyUPnbKm+xYYVYruCinGcftSBaa8zoF9hZO4BcSCFUvHVTtzpIY6YzUnYtuEhZ+C9iEXjxnasg=="],
+
+    "@freik/typechk": ["@freik/typechk@0.9.0", "", {}, "sha512-WasUyuWdCc03dDcc4FXjebgcWhm2Ed32fcTtPNmZCX+ufu3I7gMXPImPKbOoBxC+nFN3e/8Hk0Yhec0lCfGzKA=="],
 
     "@freik/workspace": ["@freik/workspace@0.6.5", "", { "dependencies": { "@freik/workspace": "^0.6.4" }, "peerDependencies": { "esbuild": "^0.23.1", "prettier": "^3.3.3", "typescript": "^5.5.4" }, "bin": { "tools": "lib/tools.js" } }, "sha512-W7f6RTE0336/68RyHqjf5OhrR8uOfHJTc0Z0DEE5Y1ArEFnnjEWnfXwK6yC168nLNdsk+2vJUELhrBEqaP+aHA=="],
 
