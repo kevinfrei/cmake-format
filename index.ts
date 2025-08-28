@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { parseCMakeFile } from './src/parser';
 import { printCMakeToString } from './src/printer';
 import { MakeTokenStream } from './src/tokenizer';
+import { expando } from './src/bun-glob-helper';
 
 const appName = process.argv[1]!.split(/[\\/]/).pop();
 
@@ -34,7 +35,7 @@ const filePaths = inPlace ? process.argv.slice(3) : process.argv.slice(2);
 
 // TODO: Load settings from .passable.json or .passablerc
 
-filePaths.forEach((filePath) => {
+expando(filePaths).forEach((filePath) => {
   const lines = printFullFile(filePath);
   if (!inPlace) {
     console.log(lines);
