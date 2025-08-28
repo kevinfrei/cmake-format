@@ -1,7 +1,7 @@
-import { isUndefined } from '@freik/typechk';
 import { expect, test } from 'bun:test';
 import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
+import { isUndefined } from '../helpers';
 import {
   compareTokensFile,
   llvmRepoExists,
@@ -40,7 +40,6 @@ function collectFiles() {
     }
   }
 
-  // Example usage
   findCMakeFiles(llvmPath); // or any root directory
 }
 
@@ -98,12 +97,12 @@ test(llvmTestName(), async () => {
     const pfailStr =
       printSuccess !== success
         ? `
-Print failures: ${printFailures.length} out of ${success} total
-==> ${sortedPrintFailures.map((f) => `${f.path} [${f.fileSize} bytes]`).join('\n==> ')}`
+==> ${sortedPrintFailures.map((f) => `${f.path} [${f.fileSize} bytes]`).join('\n==> ')}
+Print failures: ${printFailures.length} out of ${success} total`
         : '';
     throw new Error(`Failed to process files:
 --> ${sortedFailures.map((f) => `${f.path} [${f.fileSize} bytes]`).join('\n--> ')}
-Processed files: Failed ${failures.length} out of ${success + failures.length} total.
+${printSuccess}Processed files: Failed ${failures.length} out of ${success + failures.length} total.
 Failure rate: ${failureRate}%${pfailStr}`);
   }
 });

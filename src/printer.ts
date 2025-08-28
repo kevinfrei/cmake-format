@@ -1,4 +1,4 @@
-import { isUndefined } from '@freik/typechk';
+import { isUndefined } from './helpers';
 import type {
   ArgList,
   Argument,
