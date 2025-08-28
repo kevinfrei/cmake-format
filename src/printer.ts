@@ -166,10 +166,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
   }
 
   // Determines if an arg list *can* be on a single line
-  function singleLineLen(argList?: ArgList): number {
-    if (!argList) {
-      return 2; // ()'s
-    }
+  function singleLineLen(argList: ArgList): number {
     // If there's a prefix tail comment, we can't single line it
     // command (# this is a comment
     //          ^ we can't put this on the same line as the closing parenthesis
@@ -237,7 +234,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
 
   // Returns the *last* line of the code being formatted
   function formatInvoke(prefix: string, argList?: ArgList): string {
-    const single = singleLineLen(argList);
+    const single = singleLineLen(argList || { args: [] });
     if (single > 0 && availableWidth() >= single + prefix.length) {
       return (prefix !== '' ? indent(prefix) : '') + formatArgList(argList);
     }

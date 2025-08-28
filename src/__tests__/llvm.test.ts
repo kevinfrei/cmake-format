@@ -47,10 +47,10 @@ function collectFiles() {
 function llvmTestName() {
   collectFiles();
   if (isUndefined(llvmPath)) {
-    return 'No LLVM repo found';
+    return 'No LLVM repo found: Clone it at ../llvm to run these tests.';
   }
 
-  return `Process ${cmakeFiles.length} LLVM CMake files [if the repo exists]`;
+  return `Process ${cmakeFiles.length} LLVM CMake files [found LLVM repo]`;
 }
 
 test(llvmTestName(), async () => {
