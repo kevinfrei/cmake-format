@@ -1,22 +1,6 @@
 import { TokenType, type TokenStream } from './tokenizer';
 
-export enum NumberedASTNode {
-  QuotedString, // = 'QuotedString',
-  UnquotedString, // = 'UnquotedString',
-  VariableReference, // = 'VariableReference',
-  CommandInvocation, // = 'CommandInvocation',
-  ConditionalBlock, // = 'ConditionalBlock',
-  ElseIfBlock, // = 'ElseIfBlock',
-  ElseBlock, // = 'ElseBlock',
-  Group, // = 'Group',
-  PairedCall, // = 'PairedCall',
-  Bracketed, // = 'Bracketed',
-  BlockComment, // = 'BlockComment',
-  Directive, // = 'Directive',
-  CMakeFile, // = 'CMakeFile',
-}
-
-export enum ASTNode {
+export const enum ASTNode {
   QuotedString = 'QuotedString',
   UnquotedString = 'UnquotedString',
   VariableReference = 'VariableReference',
@@ -359,7 +343,7 @@ function parseArgument(tokens: TokenStream): Argument | undefined {
     case TokenType.EmptyLine:
       // We don't respect empty line tokens in arguments; consume and skip them.
       tokens.consume();
-      return undefined; 
+      return undefined;
     case TokenType.Paren:
       // Don't consume the token, as the group args parser will expect it
       return parseGroupedArgs(tokens);

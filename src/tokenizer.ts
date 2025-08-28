@@ -1,23 +1,8 @@
 // Tokenizer types
 
-import { isString, isUndefined } from '@freik/typechk';
+import { isString, isUndefined } from './helpers';
 
-// This should be faster, but the strings make it more debuggable
-export enum NumberedTokenType {
-  Identifier, // = 'identifier',
-  Quoted, // = 'quoted',
-  Bracketed, // = 'bracketed',
-  Variable, // = 'variable',
-  Paren, // = 'paren',
-  Curly, // = 'curly',
-  Comment, // = 'comment',
-  TailComment, // = 'tail_comment',
-  Directive, // = 'directive',
-  EmptyLine, // = 'empty',
-  EOF, // = 'eof',
-}
-
-export enum TokenType {
+export const enum TokenType {
   Identifier = 'identifier',
   Quoted = 'quoted',
   Bracketed = 'bracketed',
