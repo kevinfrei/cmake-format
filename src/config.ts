@@ -118,7 +118,13 @@ export const defaultCfg: Configuration = {
       ],
       options: ['HEADERS', 'CXX_MODULES'],
     },
+    target_precompile_headers: {
+      controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE', 'REUSE_FROM'],
+    },
     target_compile_definitions: {
+      controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
+    },
+    target_include_directories: {
       controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
     },
     set: { indentAfter: 0 },
