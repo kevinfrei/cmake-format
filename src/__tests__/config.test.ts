@@ -7,7 +7,7 @@ describe('config tests', () => {
   test('config file', () => {
     const cwd = process.cwd();
     try {
-      process.chdir(path.dirname(getTestFileName('.passablerc.json')));
+      process.chdir(path.dirname(getTestFileName('good-cfg-dir/test-dir/.passablerc.json')));
       const config = loadConfig();
       expect(config).toBeDefined();
       expect(config.endOfLine).toBe('\n');
@@ -28,6 +28,16 @@ describe('config tests', () => {
       expect(config.commands!.set).toBeDefined();
       expect(Object.keys(config.commands!.set!).length).toBe(1);
       expect(config.commands!.set!.indent).toBe(1);
+      process.chdir('../../bad-cfg-dir');
+      console.error("*******************************");
+      console.error("* EXPECTED ERROR OUTPUT BEGIN *");
+      console.error("*******************************");
+      const cfg = loadConfig();
+      console.error("*******************************");
+      console.error("*  EXPECTED ERROR OUTPUT END  *");
+      console.error("*******************************");
+      expect(cfg).toBeDefined();
+      expect(Object.keys(cfg).length).toBe(0);
     } finally {
       process.chdir(cwd);
     }
