@@ -7,7 +7,9 @@ describe('config tests', () => {
   test('config file', () => {
     const cwd = process.cwd();
     try {
-      process.chdir(path.dirname(getTestFileName('good-cfg-dir/test-dir/.passablerc.json')));
+      process.chdir(
+        path.dirname(getTestFileName('good-cfg-dir/test-dir/.passablerc.json')),
+      );
       const config = loadConfig();
       expect(config).toBeDefined();
       expect(config.endOfLine).toBe('\n');
@@ -29,13 +31,13 @@ describe('config tests', () => {
       expect(Object.keys(config.commands!.set!).length).toBe(1);
       expect(config.commands!.set!.indent).toBe(1);
       process.chdir('../../bad-cfg-dir');
-      console.error("*******************************");
-      console.error("* EXPECTED ERROR OUTPUT BEGIN *");
-      console.error("*******************************");
+      console.error('*******************************');
+      console.error('* EXPECTED ERROR OUTPUT BEGIN *');
+      console.error('*******************************');
       const cfg = loadConfig();
-      console.error("*******************************");
-      console.error("*  EXPECTED ERROR OUTPUT END  *");
-      console.error("*******************************");
+      console.error('*******************************');
+      console.error('*  EXPECTED ERROR OUTPUT END  *');
+      console.error('*******************************');
       expect(cfg).toBeDefined();
       expect(Object.keys(cfg).length).toBe(0);
     } finally {
@@ -45,7 +47,9 @@ describe('config tests', () => {
   test('config formatting check: indent a command', () => {
     const cwd = process.cwd();
     try {
-      process.chdir(path.dirname(getTestFileName('.passablerc.json')));
+      process.chdir(
+        path.dirname(getTestFileName('good-cfg-dir/test-dir/.passablerc.json')),
+      );
       const config = loadConfig();
       const cmakeContent = `set(
       SOME_COMMAND value "other value here"
@@ -57,8 +61,13 @@ describe('config tests', () => {
       expect(res.indexOf('\r')).toBe(-1);
       // There should be no blank lines in our output
       const lines = res.split('\n');
-      const blank = lines.findIndex(line => line.trim().length === 0 );
+      const blank = lines.findIndex((line) => line.trim().length === 0);
       expect(blank).toBe(-1);
+      expect(lines[0]!).toBe('set(');
+      expect(lines[1]!).toBe('\tSOME_COMMAND');
+      // From the config, indent args after the first by 1 more level for 'set'
+      expect(lines[2]!).toBe('\t\tvalue');
+      expect(lines[lines.length - 1]!).toBe(')');
     } finally {
       process.chdir(cwd);
     }
