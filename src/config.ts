@@ -15,11 +15,25 @@ export type CommandConfig = {
   options: string[];
 };
 
+export type CommandConfigSet = {
+  indentAfter: number;
+  controlKeywords: Set<string>;
+  options: Set<string>;
+};
+
 export const emptyCmdConfig: CommandConfig = Object.freeze({
   controlKeywords: [],
   indentAfter: -1,
   options: [],
 });
+
+export const emptyCmdConfigSet: CommandConfigSet = {
+  controlKeywords: new Set(),
+  indentAfter: -1,
+  options: new Set(),
+};
+
+export type CommandConfigMap = Map<string, [string, CommandConfigSet]>;
 
 export type Configuration = {
   useTabs: boolean;
@@ -155,12 +169,25 @@ export function loadConfig(): Partial<Configuration> {
   return {};
 }
 
+export function makeCommandConfigSet(config: CommandConfig): CommandConfigSet {
+  return {
+    controlKeywords: new Set(
+      config.controlKeywords.map((s) => s.toUpperCase()),
+    ),
+    options: new Set(config.options.map((s) => s.toUpperCase())),
+    indentAfter: config.indentAfter ?? 0,
+  };
+}
+
 export function makeCommandConfigMap(
   commands: Record<string, Partial<CommandConfig>>,
-): Map<string, CommandConfig> {
-  const cmdMap = new Map<string, CommandConfig>();
+): CommandConfigMap {
+  const cmdMap = new Map<string, [string, CommandConfigSet]>();
   for (const [name, config] of Object.entries(commands)) {
-    cmdMap.set(name, { ...emptyCmdConfig, ...config });
+    cmdMap.set(name.toLowerCase(), [
+      name,
+      makeCommandConfigSet({ ...emptyCmdConfig, ...config }),
+    ]);
   }
   return cmdMap;
 }

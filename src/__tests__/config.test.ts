@@ -73,4 +73,39 @@ describe('config tests', () => {
       process.chdir(cwd);
     }
   });
+  test('config formatting check: controlKeywords & options', () => {
+    const cwd = process.cwd();
+    try {
+      process.chdir(
+        path.dirname(getTestFileName('good-cfg-dir/test-dir/.passablerc.json')),
+      );
+      const config = loadConfig();
+      // A couple control keywords, and an option
+      const cmakeContent = `add_executable(myApp PuBlIc value value2
+      private value3 thingy value 5 value6 )`;
+      const res = printString(cmakeContent, config);
+      // console.log(res);
+      expect(res).toBeDefined();
+      expect(res.indexOf('\r')).toBe(-1);
+      // There should be no blank lines in our output
+      const lines = res.split('\n');
+      const blank = lines.findIndex((line) => line.trim().length === 0);
+      expect(blank).toBe(-1);
+      expect(lines[0]!).toBe('add_executable(');
+      expect(lines[1]!).toBe('\tmyApp');
+      // From the config, indent args after the first by 1 more level for 'add_executable'
+      expect(lines[2]!).toBe('\tPUBLIC');
+      expect(lines[3]!).toBe('\t\tvalue');
+      expect(lines[4]!).toBe('\t\tvalue2');
+      expect(lines[5]!).toBe('\tPRIVATE');
+      expect(lines[6]!).toBe('\t\tvalue3');
+      expect(lines[7]!).toBe('\t\tTHINGY');
+      expect(lines[8]!).toBe('\t\tvalue');
+      expect(lines[9]!).toBe('\t\t5');
+      expect(lines[10]!).toBe('\t\tvalue6');
+      expect(lines[11]!).toBe(')');
+    } finally {
+      process.chdir(cwd);
+    }
+  });
 });

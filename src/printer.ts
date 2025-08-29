@@ -1,9 +1,11 @@
 import { isUndefined } from '@freik/typechk';
 import {
   type CommandConfig,
+  type CommandConfigSet,
   type Configuration,
   defaultCfg,
   emptyCmdConfig,
+  emptyCmdConfigSet,
   getEOL,
   makeCommandConfigMap,
 } from './config';
@@ -132,12 +134,35 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
   // For an arg list that doesn't fit on one line:
   function formatArgListLines(
     argList?: ArgList,
-    cmdConfig: CommandConfig = emptyCmdConfig,
+    cmdConfig: CommandConfigSet = emptyCmdConfigSet,
   ): void {
     if (!argList) return;
     let originallevel = level;
+    let underControl = false;
     for (let i = 0; i < argList.args.length; i++) {
-      formatArgLine(argList.args[i]!);
+      const arg = argList.args[i]!;
+      if (arg.type === ASTNode.UnquotedString) {
+        if (cmdConfig.controlKeywords.has(arg.value.toUpperCase())) {
+          arg.value = arg.value.toUpperCase();
+          // If the argument is a control keyword and we were under a different
+          // control keyword, we need to unindent it
+          if (underControl) {
+            level--;
+          }
+        } else if (cmdConfig.options.has(arg.value.toUpperCase())) {
+          arg.value = arg.value.toUpperCase();
+        }
+      }
+      formatArgLine(arg);
+      if (
+        arg.type === ASTNode.UnquotedString &&
+        cmdConfig.controlKeywords.has(arg.value.toUpperCase())
+      ) {
+        // If the argument is a control keyword we need to indent more
+        level++;
+        underControl = true;
+      }
+      // If we're after the indentAfter point, we need to increase the level
       if (i === cmdConfig.indentAfter) {
         level++;
       }
@@ -152,10 +177,14 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
       return (prefix !== '' ? indent(prefix) : '') + formatArgList(argList);
     }
     // It's on multiple lines.
-    const cmdConfig = cmdToConfig.get(prefix);
-    lines.push(indent(prefix + '(' + maybeTail(argList?.prefixTailComment)));
+    const cmdConfigPair = cmdToConfig.get(prefix);
+    let realName = cmdConfigPair ? cmdConfigPair[0] : prefix;
+    lines.push(indent(realName + '(' + maybeTail(argList?.prefixTailComment)));
     level++;
-    formatArgListLines(argList, cmdConfig);
+    formatArgListLines(
+      argList,
+      cmdConfigPair ? cmdConfigPair[1] : emptyCmdConfigSet,
+    );
     level--;
     return ')';
   }
