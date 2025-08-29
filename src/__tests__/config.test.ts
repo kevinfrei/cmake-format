@@ -47,14 +47,19 @@ describe('config tests', () => {
     try {
       process.chdir(path.dirname(getTestFileName('.passablerc.json')));
       const config = loadConfig();
-      const cmakeContent = `
-      set(SOME_COMMAND value "other value here"
+      const cmakeContent = `set(
+      SOME_COMMAND value "other value here"
       "still" "more" "values" #[=[here]=] yup here we go)
       `;
       const res = printString(cmakeContent, config);
       // console.log(res);
       expect(res).toBeDefined();
       expect(res.indexOf('\r')).toBe(-1);
+      // There should be no blank lines in our output
+      const lines = res.split('\n');
+      const blank = lines.findIndex(line => line.trim().length === 0 );
+      console.log(`Blank: ${blank}`);
+      expect(blank).toBe(-1);
     } finally {
       process.chdir(cwd);
     }
