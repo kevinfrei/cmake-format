@@ -15,6 +15,12 @@ export type CommandConfig = {
   options: string[];
 };
 
+const emptyCmdConfig: CommandConfig = {
+  controlKeywords: [],
+  indent: -1,
+  options: [],
+};
+
 export type Configuration = {
   useTabs: boolean;
   tabWidth: number;
@@ -147,4 +153,14 @@ export function loadConfig(): Partial<Configuration> {
     return loadConfigFile(configFile);
   }
   return {};
+}
+
+export function makeCommandConfigMap(
+  commands: Record<string, Partial<CommandConfig>>,
+): Map<string, CommandConfig> {
+  const cmdMap = new Map<string, CommandConfig>();
+  for (const [name, config] of Object.entries(commands)) {
+    cmdMap.set(name, { ...emptyCmdConfig, ...config });
+  }
+  return cmdMap;
 }

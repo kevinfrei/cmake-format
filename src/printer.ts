@@ -1,5 +1,11 @@
 import { isUndefined } from '@freik/typechk';
-import { type Configuration, defaultCfg, getEOL } from './config';
+import {
+  type CommandConfig,
+  type Configuration,
+  defaultCfg,
+  getEOL,
+  makeCommandConfigMap,
+} from './config';
 import type {
   ArgList,
   Argument,
@@ -15,6 +21,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
   const lines: string[] = [];
   let level: number = 0;
   const cfg = { ...defaultCfg, ...config };
+  const cmdToConfig = makeCommandConfigMap(cfg.commands);
 
   let indentSpace = cfg.useTabs ? '\t' : ' '.repeat(cfg.tabWidth);
 
