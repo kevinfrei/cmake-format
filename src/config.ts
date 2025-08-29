@@ -11,15 +11,15 @@ import * as path from 'path';
 
 export type CommandConfig = {
   controlKeywords: string[];
-  indent: number;
+  indentAfter: number;
   options: string[];
 };
 
-const emptyCmdConfig: CommandConfig = {
+export const emptyCmdConfig: CommandConfig = Object.freeze({
   controlKeywords: [],
-  indent: -1,
+  indentAfter: -1,
   options: [],
-};
+});
 
 export type Configuration = {
   useTabs: boolean;
@@ -37,7 +37,7 @@ export type Configuration = {
 
 const chkCommandConfig = chkPartialOf<CommandConfig>({
   controlKeywords: chkArrayOf(isString),
-  indent: isNumber,
+  indentAfter: isNumber,
   options: chkArrayOf(isString),
 });
 
@@ -107,7 +107,7 @@ export const defaultCfg: Configuration = {
     target_compile_definitions: {
       controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
     },
-    set: { indent: 1 },
+    set: { indentAfter: 0 },
   },
   /*
   sort: {

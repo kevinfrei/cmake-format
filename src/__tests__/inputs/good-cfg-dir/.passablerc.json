@@ -9,7 +9,7 @@
       "options": ["INHERIT", "THINGY"]
     },
     "set": {
-      "indent": 1
+      "indentAfter": 0
     }
   }
 }
