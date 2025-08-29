@@ -42,15 +42,15 @@ describe('config tests', () => {
       process.chdir(cwd);
     }
   });
-  test('config settings', () => {
+  test('config formatting check: indent a command', () => {
     const cwd = process.cwd();
     try {
       process.chdir(path.dirname(getTestFileName('.passablerc.json')));
       const config = loadConfig();
       const cmakeContent = `set(
       SOME_COMMAND value "other value here"
-      "still" "more" "values" #[=[here]=] yup here we go)
-      `;
+      "still" "more"
+      "values" #[=[here is a block comment]=] yup here we go)`;
       const res = printString(cmakeContent, config);
       // console.log(res);
       expect(res).toBeDefined();
@@ -58,7 +58,6 @@ describe('config tests', () => {
       // There should be no blank lines in our output
       const lines = res.split('\n');
       const blank = lines.findIndex(line => line.trim().length === 0 );
-      console.log(`Blank: ${blank}`);
       expect(blank).toBe(-1);
     } finally {
       process.chdir(cwd);
