@@ -1,0 +1,15 @@
+{
+  "printWidth": 60,
+  "tabWidth": 3,
+  "useTabs": true,
+  "endOfLine": "\n",
+  "commands": {
+    "add_executable": {
+      "controlKeywords": ["PUBLIC", "PRIVATE"],
+      "options": ["INHERIT", "THINGY"]
+    },
+    "set": {
+      "indent": 1
+    }
+  }
+}
