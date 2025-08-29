@@ -40,7 +40,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
   function formatArg(arg: Argument): string {
     switch (arg.type) {
       case ASTNode.BlockComment:
-        return `\n${arg.value}\n`; // TODO: Indent
+        return `${arg.value}`; // TODO: Indent
       case ASTNode.QuotedString:
         return `"${arg.value}"`;
       case ASTNode.UnquotedString:
