@@ -3,6 +3,7 @@ import {
   type CommandConfig,
   type Configuration,
   defaultCfg,
+  emptyCmdConfig,
   getEOL,
   makeCommandConfigMap,
 } from './config';
@@ -128,9 +129,20 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
     );
   }
 
-  function formatArgListLines(argList?: ArgList): void {
+  // For an arg list that doesn't fit on one line:
+  function formatArgListLines(
+    argList?: ArgList,
+    cmdConfig: CommandConfig = emptyCmdConfig,
+  ): void {
     if (!argList) return;
-    argList.args.forEach(formatArgLine);
+    let originallevel = level;
+    for (let i = 0; i < argList.args.length; i++) {
+      formatArgLine(argList.args[i]!);
+      if (i === cmdConfig.indentAfter) {
+        level++;
+      }
+    }
+    level = originallevel;
   }
 
   // Returns the *last* line of the code being formatted
@@ -140,9 +152,10 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
       return (prefix !== '' ? indent(prefix) : '') + formatArgList(argList);
     }
     // It's on multiple lines.
+    const cmdConfig = cmdToConfig.get(prefix);
     lines.push(indent(prefix + '(' + maybeTail(argList?.prefixTailComment)));
     level++;
-    formatArgListLines(argList);
+    formatArgListLines(argList, cmdConfig);
     level--;
     return ')';
   }

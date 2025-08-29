@@ -29,7 +29,7 @@ describe('config tests', () => {
       ]);
       expect(config.commands!.set).toBeDefined();
       expect(Object.keys(config.commands!.set!).length).toBe(1);
-      expect(config.commands!.set!.indent).toBe(1);
+      expect(config.commands!.set!.indentAfter).toBe(0);
       process.chdir('../../bad-cfg-dir');
       console.error('*******************************');
       console.error('* EXPECTED ERROR OUTPUT BEGIN *');
@@ -44,7 +44,7 @@ describe('config tests', () => {
       process.chdir(cwd);
     }
   });
-  test('config formatting check: indent a command', () => {
+  test('config formatting check: indentAfter', () => {
     const cwd = process.cwd();
     try {
       process.chdir(
@@ -67,6 +67,7 @@ describe('config tests', () => {
       expect(lines[1]!).toBe('\tSOME_COMMAND');
       // From the config, indent args after the first by 1 more level for 'set'
       expect(lines[2]!).toBe('\t\tvalue');
+      expect(lines[lines.length - 2]!).toBe('\t\tgo');
       expect(lines[lines.length - 1]!).toBe(')');
     } finally {
       process.chdir(cwd);

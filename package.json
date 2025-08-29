@@ -29,7 +29,9 @@
     "cli"
   ],
   "scripts": {
-    "build": "tsc",
+    "typecheck": "tsc",
+    "typechk": "tsc",
+    "type": "tsc",
     "start": "bun run index.ts",
     "test": "bun test",
     "lint": "eslint . --ext .ts",
