@@ -16,6 +16,10 @@ formatter is to make CMake files not any prettier, but at least _passable_.
 
 ## Current status
 
+Usable & useful! It's not yet published to NPM, yet, though, so it's only really
+usable by me, or someone who wants to add a github dependency to their
+package.json file :laughing:
+
 This thing parses **all 2000+** LLVM/Clang/LLDB/LLD CMake files as of this
 writing, which is (IMO) good enough to be useful because that's a very complex
 build system (I'm also a little familiar with it). Actually, it parses and
@@ -34,13 +38,10 @@ having dealt with all the stupid corner cases of where comments can go, but the
 whole thing is pretty small, so needing to know details of fewer tools seems
 like a good trade-off. Maybe I'll migrate to `peg.js` in the future...
 
-I should probably go through the failures I fixed to get an improved test bed,
-but that's just not happening yet. I'm retired, and this is one of the sillier
-rabbit-holes I've gone down. I do, however, appear to have gone _all the way
-down_ this rabbit-hole.
-
-Next step: Actually pretty-printing!
+I'm retired, and this is one of the sillier rabbit-holes I've gone down. I do,
+however, appear to have gone _all the way down_ this rabbit-hole.
 
 ### TODO:
 
-- Start making the printer actually print things nicely.
+- Document the settings
+- Publish to NPM (and make it something you can invoke globally, right?)
