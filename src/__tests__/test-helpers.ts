@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import type { Configuration } from '../config';
 import type { CMakeFile } from '../parser';
 import { parseCMakeFile } from '../parser';
 import { printCMake, printCMakeToString } from '../printer';
@@ -37,8 +38,11 @@ export function parseString(content: string): CMakeFile {
   return parseCMakeFile(tokens, input);
 }
 
-export function printString(content: string): string {
-  return printCMake(parseString(content)).join('\n');
+export function printString(
+  content: string,
+  cfg: Partial<Configuration> = {},
+): string {
+  return printCMake(parseString(content), cfg).join('\n');
 }
 
 export function printTestFile(filePath: string): string {

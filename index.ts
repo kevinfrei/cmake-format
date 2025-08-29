@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { loadConfig, type Configuration } from './src/config';
 import { expando } from './src/helpers';
 import { parseCMakeFile } from './src/parser';
 import { printCMakeToString } from './src/printer';
@@ -15,11 +16,14 @@ function usage() {
   process.exit(1);
 }
 
-export function printFullFile(path: string): string {
+export function printFullFile(
+  path: string,
+  config: Partial<Configuration>,
+): string {
   const content = readFileSync(path, 'utf-8');
   const tokens = MakeTokenStream(content);
   const ast = parseCMakeFile(tokens, content.split('\n'));
-  return printCMakeToString(ast);
+  return printCMakeToString(ast, config);
 }
 
 if (
@@ -37,11 +41,12 @@ const allFiles = expando(filePaths);
 if (inPlace) {
   console.time('Total Formatting Time');
 }
+const config = loadConfig();
 allFiles.forEach((filePath) => {
   if (inPlace) {
     console.time(`Formatting Time: ${filePath}`);
   }
-  const lines = printFullFile(filePath);
+  const lines = printFullFile(filePath, config);
   if (inPlace) {
     // TODO: Handle UTF-8 properly. I still need to use binary mode so that
     // Windows won't add a CRLF line ending when the file is written with LF
