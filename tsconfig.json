@@ -25,8 +25,7 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
     "declaration": true,
-    "emitDeclarationOnly": true,
-    "outFile": "build/passable.d.ts",
+    "outDir": "build",
   },
-  "include": ["bun.ts"]
+  "files": ["src/config.ts", "src/parser.ts", "src/printer.ts", "src/tokenizer.ts"],
 }

@@ -5,11 +5,9 @@ import { expando } from './src/bun-helpers.js';
 import { loadConfig, type Configuration } from './src/config.js';
 import { parseCMakeFile } from './src/parser.js';
 import { printCMakeToString } from './src/printer.js';
-import { MakeTokenStream ,type  Token, type TokenStream } from './src/tokenizer.js';
-
-export type { Configuration, Token, TokenStream };
-export { MakeTokenStream, parseCMakeFile, printCMakeToString,
- };
+import {
+  MakeTokenStream,
+} from './src/tokenizer.js';
 
 const appName = process.argv[1]!.split(/[\\/]/).pop();
 
