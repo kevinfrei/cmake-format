@@ -2,7 +2,7 @@
 
 import { isString, isUndefined } from '@freik/typechk';
 
-export const enum TokenType {
+export enum TokenType {
   Identifier = 'identifier',
   Quoted = 'quoted',
   Bracketed = 'bracketed',

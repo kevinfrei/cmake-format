@@ -29,8 +29,8 @@
     "cmakelists.txt"
   ],
   "scripts": {
-    "typecheck": "tsc",
-    "typechk": "tsc",
+    "typecheck": "tsc --no-emit",
+    "typechk": "tsc --no-emit",
     "types": "tsc",
     "type": "tsc",
     "start": "bun run index.ts",
@@ -38,8 +38,8 @@
     "lint": "eslint . --ext .ts",
     "format": "tools format bun",
     "fmt": "tools format bun",
-    "build-bun": "bun build --outfile build/bun.js --target bun ./bun.ts --minify",
-    "build-node": "bun build --outfile build/node.js --target node ./node.ts --minify",
+    "build-bun": "bun build --outfile build/bun.js --target bun ./bun.ts",
+    "build-node": "bun build --outfile build/node.js --target node ./node.ts",
     "build": "bun run build-bun && bun run build-node",
     "prepublishOnly": "bun run build"
   },

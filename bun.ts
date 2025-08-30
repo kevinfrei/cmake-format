@@ -1,11 +1,15 @@
 #!/usr/bin/env bun
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { expando } from './src/bun-helpers';
-import { loadConfig, type Configuration } from './src/config';
-import { parseCMakeFile } from './src/parser';
-import { printCMakeToString } from './src/printer';
-import { MakeTokenStream } from './src/tokenizer';
+import { expando } from './src/bun-helpers.js';
+import { loadConfig, type Configuration } from './src/config.js';
+import { parseCMakeFile } from './src/parser.js';
+import { printCMakeToString } from './src/printer.js';
+import { MakeTokenStream ,type  Token, type TokenStream } from './src/tokenizer.js';
+
+export type { Configuration, Token, TokenStream };
+export { MakeTokenStream, parseCMakeFile, printCMakeToString,
+ };
 
 const appName = process.argv[1]!.split(/[\\/]/).pop();
 
