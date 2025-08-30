@@ -1,18 +1,17 @@
 {
   "name": "@freik/passable",
   "version": "0.0.1",
+  "type": "module",
   "module": "index.ts",
-  "devDependencies": {
-    "@freik/workspace": "^0.6.5",
-    "@types/bun": "latest",
-    "prettier-plugin-organize-imports": "^4.2.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5.9.2"
-  },
   "bin": {
-    "passable": "index.ts"
+    "passable": "build/bun.js",
+    "passable-node": "build/node.js"
   },
+  "files": [
+    "build/*.js",
+    "build/*.d.ts"
+  ],
+  "types": "build/*.d.ts",
   "keywords": [
     "cmake",
     "formatter",
@@ -26,21 +25,33 @@
     "auto-format",
     "autoformat",
     "prettier",
-    "cli"
+    "cli",
+    "cmakelists",
+    "cmakelists.txt"
   ],
   "scripts": {
-    "typecheck": "tsc",
-    "typechk": "tsc",
+    "typecheck": "tsc --noemit",
+    "typechk": "tsc --noemit",
+    "types": "tsc",
     "type": "tsc",
     "start": "bun run index.ts",
     "test": "bun test",
     "lint": "eslint . --ext .ts",
-    "prepare": "bun run build",
     "format": "tools format bun",
-    "fmt": "tools format bun"
+    "fmt": "tools format bun",
+    "build-bun": "bun build --outfile build/bun.js --target bun ./bun.ts --minify",
+    "build-node": "bun build --outfile build/node.js --target node ./node.ts --minify",
+    "build": "bun run build-bun && bun run build-node",
+    "prepublishOnly": "bun run build"
   },
-  "type": "module",
+  "devDependencies": {
+    "@freik/workspace": "^0.6.5",
+    "@types/bun": "latest",
+    "prettier-plugin-organize-imports": "^4.2.0",
+    "typescript": "^5.9.2"
+  },
   "dependencies": {
-    "@freik/typechk": "^0.9.0"
+    "@freik/typechk": "^0.9.0",
+    "glob": "^11.0.3"
   }
 }

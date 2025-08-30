@@ -1,6 +1,6 @@
 import { Glob } from 'bun';
 
-export function deGlob(pathOrGlob: string): Glob | undefined {
+function deGlob(pathOrGlob: string): Glob | undefined {
   if (pathOrGlob.indexOf('*') >= 0 || pathOrGlob.indexOf('?') >= 0) {
     let res = pathOrGlob;
     res = res.replaceAll('\\', '\\\\');

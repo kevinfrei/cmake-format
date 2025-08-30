@@ -1,14 +1,12 @@
 import { isUndefined } from '@freik/typechk';
 import {
-  type CommandConfig,
   type CommandConfigSet,
   type Configuration,
   defaultCfg,
-  emptyCmdConfig,
   emptyCmdConfigSet,
   getEOL,
   makeCommandConfigMap,
-} from './config';
+} from './config.js';
 import type {
   ArgList,
   Argument,
@@ -17,10 +15,10 @@ import type {
   ConditionalBlock,
   PairedCall,
   Statement,
-} from './parser';
-import { ASTNode } from './parser';
+} from './parser.js';
+import { ASTNode } from './parser.js';
 
-function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
+function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
   const lines: string[] = [];
   let level: number = 0;
   const cfg = { ...defaultCfg, ...config };

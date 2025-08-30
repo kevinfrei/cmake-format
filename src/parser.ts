@@ -1,6 +1,6 @@
-import { TokenType, type TokenStream } from './tokenizer';
+import { TokenType, type TokenStream } from './tokenizer.js';
 
-export const enum ASTNode {
+export enum ASTNode {
   QuotedString = 'QuotedString',
   UnquotedString = 'UnquotedString',
   VariableReference = 'VariableReference',

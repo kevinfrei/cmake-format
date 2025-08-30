@@ -1,18 +1,19 @@
 #!/usr/bin/env bun
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { loadConfig, type Configuration } from './src/config';
-import { expando } from './src/helpers';
-import { parseCMakeFile } from './src/parser';
-import { printCMakeToString } from './src/printer';
-import { MakeTokenStream } from './src/tokenizer';
+import { expando } from './src/bun-helpers.js';
+import { loadConfig, type Configuration } from './src/config.js';
+import { parseCMakeFile } from './src/parser.js';
+import { printCMakeToString } from './src/printer.js';
+import {
+  MakeTokenStream,
+} from './src/tokenizer.js';
 
 const appName = process.argv[1]!.split(/[\\/]/).pop();
 
 function usage() {
   console.error(`Usage: ${appName} <files...>`);
   console.error(`or ${appName} (-i/--in-place) <files...>`);
-  // console.error(`or "bun start (-i/--in-place) <files...>" from the project root`);
   process.exit(1);
 }
 
