@@ -1,9 +1,8 @@
 # passable
 
-### A CMake auto formatter
+## A CMake auto formatter
 
-_There's no way to make CMake files prettier, but should at least be
-**passable**_.
+### CMake files can't be made any prettier, but they should at least be _passable_
 
 This is an attempt to make a CMake file formatter, spiritually inspired by Chris
 Chedeau's excellent [Prettier Javascript formatter](https://prettier.io). Having
@@ -14,9 +13,8 @@ very much prefer
 [Prettier's philosophy](https://prettier.io/docs/option-philosophy). To be fair,
 C++ is a much larger language than Javascript, but CMake certainly isn't. So,
 I'm using Prettier's philosophy to start from. The real problem, however, is
-that no `CMakeLists.txt` file will _ever_ be **pretty**. Thus, this formatter
-will not even attempt to make your CMake files any prettier, but it will
-hopefully make them at least **_passable_**.
+that no `CMakeLists.txt` file will _ever_ be **pretty**. There's the dumb reason
+for the name...
 
 ## Using `passable` to format CMake files
 
@@ -49,14 +47,80 @@ object (so, wrap it in `{}`'s) and can contain any of the following options:
     - These keywords will be used to indent the subsequent arguments to the
       command further. Think `"PUBLIC"` `"STATIC"` or `"OBJECT"` on a command
       invocation of `add_library`.
+
+      For example, before:
+
+      ```CMake
+      add_library(myLib PUBLIC main.cpp file.cpp other.cpp thingamajig.cpp so.cpp many.cpp files.cpp)
+      ```
+
+      after:
+
+      ```CMake
+      add_library(
+        myLib
+        PUBLIC
+          main.cpp
+          file.cpp
+          other.cpp
+          thingamajig.cpp
+      )
+      ```
+
   - **`"options"`**: An array of strings.
     - Arguments that should be capitalized for the command. For example, the
       `add_executable` command would include `WIN32`, `MACOSX_BUNDLE`,
       `IMPORTED`, `ALIAS`, and `EXCLUDE_FROM_ALL`.
+
+      For example, before:
+
+      ```CMake
+      add_executable(theApp MacOSX_Bundle)
+      ```
+
+      after:
+
+      ```CMake
+      add_executable(theApp MACOSX_BUNDLE)
+      ```
+
   - **`"indentAfter"`**: positive integer
     - All arguments will be indented one level further after the argument
       specified. `set` has this set to '0' so the variable name is at 1 level of
       indentation, and the values assigned are indented 2 levels.
+
+      For example, before:
+
+      ```CMake
+      set(
+        CPP_FILES
+        file1.cpp
+        file2.cpp
+        file3.cpp
+        file4.cpp
+        file5.cpp
+        file6.cpp
+        file7.cpp
+        file8.cpp
+        file9.cpp)
+      ```
+
+      after:
+
+      ```CMake
+      set(
+        CPP_FILES
+          file1.cpp
+          file2.cpp
+          file3.cpp
+          file4.cpp
+          file5.cpp
+          file6.cpp
+          file7.cpp
+          file8.cpp
+          file9.cpp
+      )
+      ```
 
 ## Sample .passablerc.json file:
 
@@ -156,4 +220,8 @@ however, appear to have gone _all the way down_ this rabbit-hole.
 
 ### TODO:
 
-- Publish to NPM (and make it something you can invoke globally, right?)
+- [ ] Publish to NPM (and make it something you can invoke globally, right?)
+  - [ ] There should be a bun-specific version, and a node-compatible version,
+        for command line invocation.
+  - [ ] For use from other code, I don't think there's any need for something
+        different.
