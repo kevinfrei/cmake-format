@@ -106,6 +106,9 @@ export const defaultCfg: Configuration = {
         'ALIAS',
       ],
     },
+    set_target_properties: {
+      controlKeywords: ['PROPERTIES', 'LINK_FLAGS'],
+    },
     target_sources: {
       controlKeywords: [
         'INTERFACE',

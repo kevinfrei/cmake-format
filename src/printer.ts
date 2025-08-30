@@ -186,7 +186,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
       cmdConfigPair ? cmdConfigPair[1] : emptyCmdConfigSet,
     );
     level--;
-    return ')';
+    return indent(')');
   }
 
   function printCommandInvocation(cmd: CommandInvocation): void {
