@@ -42,9 +42,10 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>) {
     return cfg.printWidth - cfg.tabWidth * level;
   }
 
+  // Tail comments include the '#'
   function maybeTail(comment?: string, eol: boolean = false): string {
     if (!comment) return '';
-    return eol ? ` #${comment}${getEOL}` : ` #${comment}`;
+    return eol ? ` ${comment}${getEOL(config)}` : ` ${comment}`;
   }
 
   function formatArg(arg: Argument): string {

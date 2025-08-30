@@ -106,6 +106,37 @@ export const defaultCfg: Configuration = {
         'ALIAS',
       ],
     },
+    execute_process: {
+      controlKeywords: [
+        'COMMAND',
+        'WORKING_DIRECTORY',
+        'RESULT_VARIABLE',
+        'OUTPUT_VARIABLE',
+        'ERROR_VARIABLE',
+        'INPUT_FILE',
+        'OUTPUT_FILE',
+        'ERROR_FILE',
+        'TIMEOUT',
+        'ECHO_ERROR_VARIABLE',
+        'ECHO_OUTPUT_VARIABLE',
+        'ECHO_ERROR_VARIABLE',
+        'OUTPUT_STRIP_TRAILING_WHITESPACE',
+      ],
+    },
+    list: {
+      controlKeywords: [
+        'APPEND',
+        'INSERT',
+        'REMOVE_AT',
+        'REMOVE_ITEM',
+        'FIND',
+        'LENGTH',
+        'GET',
+        'SUBLIST',
+        'SORT',
+        'UNIQUE',
+      ],
+    },
     set_target_properties: {
       controlKeywords: ['PROPERTIES', 'LINK_FLAGS'],
     },
@@ -130,6 +161,7 @@ export const defaultCfg: Configuration = {
     target_include_directories: {
       controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
     },
+    target_link_libraries: { indentAfter: 0 },
     set: { indentAfter: 0 },
   },
   /*
