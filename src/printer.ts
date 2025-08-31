@@ -1,4 +1,4 @@
-import { isUndefined } from '@freik/typechk';
+import { chkTupleOf, isArray, isString, isUndefined, typecheck } from '@freik/typechk';
 import {
   type CommandConfigSet,
   type Configuration,
@@ -59,7 +59,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
         return `\${${arg.name}}`;
         */
       case ASTNode.Group:
-        return `${formatArgList(arg.value)}`;
+        return `(${formatArgList(arg.value)})`;
       case ASTNode.Bracketed:
         const eq = '='.repeat(arg.equals);
         return `[${eq}[${arg.value}]${eq}]`;
@@ -117,7 +117,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
         }
       }
     }
-    return `(${res})`;
+    return res;
   }
 
   // TODO: Handle grouped arg that needs splitting
@@ -169,21 +169,80 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
     level = originallevel;
   }
 
+  type ArgGroup = [string, Argument[]];
+  type ArgGroups = (Argument | ArgGroup)[];
+  function isArgGroup(item: Argument | ArgGroup | undefined): item is ArgGroup {
+    return !isUndefined(item) && isArray(item) && item.length === 2;
+  }
+  function groupArgsByControlKeyword(argList: ArgList, controlKeywords: Set<string>, options: Set<string>): ArgGroups {
+    const argGroup: ArgGroups = [];
+    function last() : ArgGroup | Argument | undefined {
+      return argGroup[argGroup.length - 1];
+    }
+    for (const arg of argList.args) {
+      if (arg.type === ASTNode.UnquotedString) {
+        const argVal = arg.value.toUpperCase();
+        if (controlKeywords.has(argVal)) {
+          // We're starting a new group;
+          argGroup.push([argVal, []]);
+          continue;
+        } else if (options.has(argVal)) {
+          // Just found an option, so end the current group
+          arg.value = argVal;
+          argGroup.push(arg);
+          continue;
+        }
+        // Fall through...
+      }
+      const lst = last();
+      if (isArgGroup(lst)) {
+          // We're in an arg group, add this guy...
+          lst[1].push(arg);
+      } else {
+        // We're not in an arg group, just add it to the main group
+        argGroup.push(arg);
+      }
+    }
+    return argGroup;
+  }
+
   // Returns the *last* line of the code being formatted
   function formatInvoke(prefix: string, argList?: ArgList): string {
     const single = singleLineLen(argList || { args: [] });
     if (single > 0 && availableWidth() >= single + prefix.length) {
-      return (prefix !== '' ? indent(prefix) : '') + formatArgList(argList);
+      const lineStart = indent(prefix);
+      return `${lineStart}(${formatArgList(argList)})`;
     }
     // It's on multiple lines.
     const cmdConfigPair = cmdToConfig.get(prefix);
     let realName = cmdConfigPair ? cmdConfigPair[0] : prefix;
     lines.push(indent(realName + '(' + maybeTail(argList?.prefixTailComment)));
     level++;
-    formatArgListLines(
-      argList,
-      cmdConfigPair ? cmdConfigPair[1] : emptyCmdConfigSet,
-    );
+    // If we have a command config pair, we'll try to use the controlKeywords to group separate lines
+    const cmdCfg = cmdConfigPair ? cmdConfigPair[1] : emptyCmdConfigSet;
+    if (cmdCfg.controlKeywords.size === 0 || isUndefined(argList)) {
+      formatArgListLines(argList, cmdCfg);
+    } else {
+      // We have (at least one) control keyword.
+      // Let's try to print each grouping on it's own line, if possible:
+      const groups = groupArgsByControlKeyword(argList, cmdCfg.controlKeywords, cmdCfg.options);
+      for (const argOrGroup of groups) {
+        if (isArgGroup(argOrGroup)) {
+          const [name, args] = argOrGroup;
+          lines.push(indent(`${name}`));
+          level++;
+          const maybeSingle = singleLineLen({ args })
+          if (maybeSingle > 0 && availableWidth() >= maybeSingle) {
+            lines.push(indent(formatArgList({ args })));
+          } else {
+            formatArgListLines({ args }, cmdCfg);
+          }
+          level--;
+        } else {
+          formatArgLine(argOrGroup);
+        }
+      }
+    }
     level--;
     return indent(')');
   }

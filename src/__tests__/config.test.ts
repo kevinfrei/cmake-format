@@ -95,15 +95,14 @@ describe('config tests', () => {
       expect(lines[1]!).toBe('\tmyApp');
       // From the config, indent args after the first by 1 more level for 'add_executable'
       expect(lines[2]!).toBe('\tPUBLIC');
-      expect(lines[3]!).toBe('\t\tvalue');
-      expect(lines[4]!).toBe('\t\tvalue2');
-      expect(lines[5]!).toBe('\tPRIVATE');
-      expect(lines[6]!).toBe('\t\tvalue3');
-      expect(lines[7]!).toBe('\t\tTHINGY');
-      expect(lines[8]!).toBe('\t\tvalue');
-      expect(lines[9]!).toBe('\t\t5');
-      expect(lines[10]!).toBe('\t\tvalue6');
-      expect(lines[11]!).toBe(')');
+      expect(lines[3]!).toBe('\t\tvalue value2');
+      expect(lines[4]!).toBe('\tPRIVATE');
+      expect(lines[5]!).toBe('\t\tvalue3');
+      expect(lines[6]!).toBe('\t\THINGY');
+      expect(lines[7]!).toBe('\tvalue');
+      expect(lines[8]!).toBe('\t5');
+      expect(lines[9]!).toBe('\tvalue6');
+      expect(lines[10]!).toBe(')');
     } finally {
       process.chdir(cwd);
     }
