@@ -233,7 +233,10 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
           level++;
           const maybeSingle = singleLineLen({ args })
           if (maybeSingle > 0 && availableWidth() >= maybeSingle) {
-            lines.push(indent(formatArgList({ args })));
+            const line = indent(formatArgList({ args }));
+            if (line.trim().length > 0) {
+              lines.push(line);
+            }
           } else {
             formatArgListLines({ args }, cmdCfg);
           }
