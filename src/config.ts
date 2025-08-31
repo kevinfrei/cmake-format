@@ -138,7 +138,7 @@ export const defaultCfg: Configuration = {
       ],
     },
     set_target_properties: {
-      controlKeywords: ['PROPERTIES', 'LINK_FLAGS'],
+      controlKeywords: ['PROPERTIES'],
     },
     target_sources: {
       controlKeywords: [

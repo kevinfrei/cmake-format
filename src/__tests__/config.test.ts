@@ -184,8 +184,8 @@ describe('config', () => {
     }
   });
   test('formatting: tokenizer of unindented text', () => {
-      // A couple control keywords, and an option
-      const cmakeContent = `target_sources(some_systems_tests
+    // A couple control keywords, and an option
+    const cmakeContent = `target_sources(some_systems_tests
 PUBLIC
         database_test_helper.h
         database_test_helper.cpp
@@ -201,30 +201,48 @@ PUBLIC
         test_helper_test.cpp
 )
 `;
-      const res = printString(cmakeContent);
-      // console.log(res);
-      expect(res).toBeDefined();
-      expect(res.indexOf('\r')).toBe(-1);
-      // There should be no blank lines in our output
-      const lines = res.split('\n');
-      const blank = lines.findIndex((line) => line.trim().length === 0);
-      expect(blank).toBe(16);
-      expect(lines[0]!).toBe('target_sources(');
-      expect(lines[1]!).toBe('  some_systems_tests');
-      // From the config, indentt args after the first by 1 more level for 'add_executable'
-      expect(lines[2]!).toBe('  PUBLIC');
-      expect(lines[3]!).toBe('    database_test_helper.h');
-      expect(lines[4]!).toBe('    database_test_helper.cpp');
-      expect(lines[5]!).toBe('    file_util_test.cc');
-      expect(lines[6]!).toBe('    json_value_matcher.h');
-      expect(lines[7]!).toBe('    json_value_matcher.cpp');
-      expect(lines[8]!).toBe('    json_value_matcher_test.cpp');
-      expect(lines[9]!).toBe('    table_matcher.h');
-      expect(lines[10]!).toBe('    table_matcher.cpp');
-      expect(lines[11]!).toBe('    table_matcher_test.cpp');
-      expect(lines[12]!).toBe('    test_helper.h');
-      expect(lines[13]!).toBe('    test_helper.cpp');
-      expect(lines[14]!).toBe('    test_helper_test.cpp');
-      expect(lines[15]!).toBe(')');
+    const res = printString(cmakeContent);
+    // console.log(res);
+    expect(res).toBeDefined();
+    expect(res.indexOf('\r')).toBe(-1);
+    // There should be no blank lines in our output
+    const lines = res.split('\n');
+    const blank = lines.findIndex((line) => line.trim().length === 0);
+    expect(blank).toBe(16);
+    expect(lines[0]!).toBe('target_sources(');
+    expect(lines[1]!).toBe('  some_systems_tests');
+    // From the config, indentt args after the first by 1 more level for 'add_executable'
+    expect(lines[2]!).toBe('  PUBLIC');
+    expect(lines[3]!).toBe('    database_test_helper.h');
+    expect(lines[4]!).toBe('    database_test_helper.cpp');
+    expect(lines[5]!).toBe('    file_util_test.cc');
+    expect(lines[6]!).toBe('    json_value_matcher.h');
+    expect(lines[7]!).toBe('    json_value_matcher.cpp');
+    expect(lines[8]!).toBe('    json_value_matcher_test.cpp');
+    expect(lines[9]!).toBe('    table_matcher.h');
+    expect(lines[10]!).toBe('    table_matcher.cpp');
+    expect(lines[11]!).toBe('    table_matcher_test.cpp');
+    expect(lines[12]!).toBe('    test_helper.h');
+    expect(lines[13]!).toBe('    test_helper.cpp');
+    expect(lines[14]!).toBe('    test_helper_test.cpp');
+    expect(lines[15]!).toBe(')');
+  });
+  test('formatting: set_target_properties', () => {
+    // A couple control keywords, and an option
+    const cmakeContent = `set_target_properties(systemwidediags_tests PROPERTIES LINK_FLAGS "/PDB:systemwidediags_tests.pdb")`;
+    const res = printString(cmakeContent);
+    // console.log(res);
+    expect(res).toBeDefined();
+    expect(res.indexOf('\r')).toBe(-1);
+    // There should be no blank lines in our output
+    const lines = res.split('\n');
+    const blank = lines.findIndex((line) => line.trim().length === 0);
+    expect(lines.length).toBe(5);
+    expect(lines[0]!).toBe('set_target_properties(');
+    expect(lines[1]!).toBe('  systemwidediags_tests');
+    // From the config, indentt args after the first by 1 more level for 'add_executable'
+    expect(lines[2]!).toBe('  PROPERTIES');
+    expect(lines[3]!).toBe('    LINK_FLAGS "/PDB:systemwidediags_tests.pdb"');
+    expect(lines[4]!).toBe(')');
   });
 });
