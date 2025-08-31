@@ -4,9 +4,9 @@
 
 ### CMake files can't be made any prettier, but they should at least be _passable_
 
-This is an attempt to make a CMake file formatter, spiritually inspired by Chris
-Chedeau's excellent [Prettier Javascript formatter](https://prettier.io). Having
-also had to deal with
+This is a CMake file formatter, spiritually inspired by Chris Chedeau's
+excellent [Javascript formatter, Prettier](https://prettier.io). Having also had
+to deal with
 [clang-format](https://clang.llvm.org/docs/ClangFormatStyleOptions.html)'s
 embrace of every random configuration choice anyone might have come up with, I
 very much prefer
@@ -16,12 +16,23 @@ I'm using Prettier's philosophy to start from. The real problem, however, is
 that no `CMakeLists.txt` file will _ever_ be **pretty**. There's the dumb reason
 for the name...
 
+## Installation
+
+The project is available on
+[NPM as `@freik/passable`](https://www.npmjs.com/package/@freik/passable). If
+you don't have a `package.json` configuration, you can just run the tool by
+installing [Bun](https://bun.sh) and then using `bunx passable <args...>`. If
+you _do_ have a `package.json`, install `@freik/passable` (probably as as a
+dev-dependency : `bun add --dev @freik/passable` or
+`npm install --dev @freik/passable`).
+
 ## Using `passable` to format CMake files
 
-Passable is writte in Typescript using the
-[`bun` Javascript runtime](http://bun.sh)
-`passable -i **/CMakeLists.txt **/*.cmake` will get you started, in your
-source-controlled repository.
+`passable -i "**/CMakeLists.txt" "**/*.cmake"` will get you started, in your
+source-controlled repository. If you're a node user, you should use
+`passable-node -i "**/CMakeLists.txt" "**/*.cmake"` instead.
+
+### Configuration
 
 To change various settings, create a `.passablerc.json` file, and put it
 alongside (or 'above') the root of your CMake project. The JSON file is a single
@@ -183,15 +194,15 @@ this._ :smile:
 
 ## Current Status
 
-Usable & useful! It's not yet published to NPM, yet, though, so it's only really
-usable by me, or someone who wants to add a github dependency to their
-package.json file :laughing:
+As of version 0.0.5, it is completely usable. My CMakeLists.txt files are
+slightly more _passable_ now. :laughing: More importantly, their formatting is
+**consistent** which is the top level goal for any auto-formatter, IMO.
 
-This thing parses **all 2000+** LLVM/Clang/LLDB/LLD CMake files as of this
-writing, which is (IMO) good enough to be useful because that's a very complex
-build system (I'm also a little familiar with it). Actually, it parses and
-correctly 'round-trips' all those files at the token level: `passable` produces
-the same token stream before and after formatting.
+This thing will round-trip **all 2000+** LLVM/Clang/LLDB/LLD CMake files as of
+this writing, which is (IMO) good enough to be useful because that's a very
+complex build system (I'm also a little familiar with it). What does
+"round-trip" mean, you may ask? `passable` produces the same token stream before
+and after formatting.
 
 It does _not_ attempt to do anything fancy with variables or other syntax like
 that. So all the `${SOURCE_FILE_LISTS}` and `$<other:monstrosities>` are left as
@@ -202,6 +213,9 @@ please open an issue. I'll try to fix it as quickly as my very busy retired life
 will allow!
 
 ## Implementation details
+
+Passable is written in Typescript using the
+[`bun` Javascript runtime](http://bun.sh).
 
 I hand-wrote a lexer and parser because the grammar as documented in pieces on
 [CMake's website](https://cmake.org/cmake/help/latest/manual/cmake-language.7.html)
@@ -218,10 +232,14 @@ like a good trade-off. Maybe I'll migrate to `peg.js` in the future...
 I'm retired, and this is one of the sillier rabbit-holes I've gone down. I do,
 however, appear to have gone _all the way down_ this rabbit-hole.
 
-### TODO:
+## TODO's
 
-- [ ] Publish to NPM (and make it something you can invoke globally, right?)
-  - [ ] There should be a bun-specific version, and a node-compatible version,
-        for command line invocation.
-  - [ ] For use from other code, I don't think there's any need for something
-        different.
+- [] Build out a condition parser. `if`/`while`/`elseif` condition expressions
+  wind up getting munged pretty badly, unfortunately.
+- [] Make a parse-tree checker, so that I can validate full parse tree
+  round-tripping, instead of token-level-only validation.
+- [] Expand `.passablerc.json` configuration to a broader set of options, like
+  Prettier (and every other JS-based config tool)
+- [] Merge command configurations from the config file, instead of strict
+  replacement, so to override or add a single item, you don't have to duplicate
+  everything else.

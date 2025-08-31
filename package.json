@@ -1,17 +1,20 @@
 {
   "name": "@freik/passable",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "type": "module",
   "module": "index.ts",
   "bin": {
-    "passable": "build/bun.js",
-    "passable-node": "build/node.js"
+    "passable": "build/passable-bun.js",
+    "passable-node": "build/passable-node.js"
   },
   "files": [
     "build/*.js",
     "build/*.d.ts"
   ],
-  "types": "build/*.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kevinfrei/cmake-format.git"
+  },
   "keywords": [
     "cmake",
     "formatter",
@@ -39,8 +42,8 @@
     "lint": "eslint . --ext .ts",
     "format": "tools format bun",
     "fmt": "tools format bun",
-    "build-bun": "bun build --outfile build/bun.js --target bun ./bun.ts --minify",
-    "build-node": "bun build --outfile build/node.js --target node ./node.ts --minify",
+    "build-bun": "bun build --outfile build/passable-bun.js --target bun ./bun.ts --minify",
+    "build-node": "bun build --outfile build/passable-node.js --target node ./node.ts --minify",
     "build": "bun run build-bun && bun run build-node",
     "prepublishOnly": "bun run build"
   },
