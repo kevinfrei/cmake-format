@@ -3,8 +3,8 @@ import * as path from 'path';
 import { loadConfig } from '../config';
 import { getTestFileName, printString } from './test-helpers';
 
-describe('config tests', () => {
-  test('config file', () => {
+describe('config', () => {
+  test('file', () => {
     const cwd = process.cwd();
     try {
       process.chdir(
@@ -16,7 +16,7 @@ describe('config tests', () => {
       expect(config.tabWidth).toBe(3);
       expect(config.useTabs).toBe(true);
       expect(config.commands).toBeDefined();
-      expect(Object.keys(config.commands!).length).toBe(2);
+      expect(Object.keys(config.commands!).length).toBe(3);
       expect(config.commands!.add_executable).toBeDefined();
       expect(Object.keys(config.commands!.add_executable!).length).toBe(2);
       expect(config.commands!.add_executable!.controlKeywords).toEqual([
@@ -44,7 +44,7 @@ describe('config tests', () => {
       process.chdir(cwd);
     }
   });
-  test('config formatting check: indentAfter', () => {
+  test('formatting: indentAfter', () => {
     const cwd = process.cwd();
     try {
       process.chdir(
@@ -73,7 +73,7 @@ describe('config tests', () => {
       process.chdir(cwd);
     }
   });
-  test('config formatting check: controlKeywords & options', () => {
+  test('formatting: controlKeywords & options', () => {
     const cwd = process.cwd();
     try {
       process.chdir(
@@ -105,7 +105,7 @@ describe('config tests', () => {
       process.chdir(cwd);
     }
   });
-  test('config formatting check: more controlKeywords & options', () => {
+  test('formatting: more controlKeywords & options', () => {
     const cwd = process.cwd();
     try {
       process.chdir(
@@ -146,6 +146,39 @@ describe('config tests', () => {
       expect(lines[17]!).toBe('\tvalue11');
       expect(lines[18]!).toBe('\tvalue12');
       expect(lines[19]!).toBe(')');
+    } finally {
+      process.chdir(cwd);
+    }
+  });
+  test('formatting: target_link_libraries', () => {
+    const cwd = process.cwd();
+    try {
+      process.chdir(
+        path.dirname(getTestFileName('good-cfg-dir/test-dir/.passablerc.json')),
+      );
+      const config = loadConfig();
+      // A couple control keywords, and an option
+      const cmakeContent = `target_link_libraries(cassette_lib Public tools_lib
+      musicdb_lib \${BOOST_LIB} \${CROW_LIB} \${MEDIAINFO_LIB} \${PFD_LIB})`;
+      const res = printString(cmakeContent, config);
+      // console.log(res);
+      expect(res).toBeDefined();
+      expect(res.indexOf('\r')).toBe(-1);
+      // There should be no blank lines in our output
+      const lines = res.split('\n');
+      const blank = lines.findIndex((line) => line.trim().length === 0);
+      expect(blank).toBe(-1);
+      expect(lines[0]!).toBe('target_link_libraries(');
+      expect(lines[1]!).toBe('\tcassette_lib');
+      // From the config, indent args after the first by 1 more level for 'add_executable'
+      expect(lines[2]!).toBe('\tPUBLIC');
+      expect(lines[3]!).toBe('\t\ttools_lib');
+      expect(lines[4]!).toBe('\t\tmusicdb_lib');
+      expect(lines[5]!).toBe('\t\t\${BOOST_LIB}');
+      expect(lines[6]!).toBe('\t\t\${CROW_LIB}');
+      expect(lines[7]!).toBe('\t\t\${MEDIAINFO_LIB}');
+      expect(lines[8]!).toBe('\t\t\${PFD_LIB}');
+      expect(lines[9]!).toBe(')');
     } finally {
       process.chdir(cwd);
     }

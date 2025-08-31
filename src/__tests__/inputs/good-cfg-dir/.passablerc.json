@@ -10,6 +10,9 @@
     },
     "set": {
       "indentAfter": 0
+    },
+    "target_link_libraries": {
+      "controlKeywords": ["INTERFACE", "PUBLIC", "PRIVATE"]
     }
   }
 }
