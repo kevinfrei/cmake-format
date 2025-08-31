@@ -236,13 +236,39 @@ PUBLIC
     expect(res.indexOf('\r')).toBe(-1);
     // There should be no blank lines in our output
     const lines = res.split('\n');
-    const blank = lines.findIndex((line) => line.trim().length === 0);
     expect(lines.length).toBe(5);
+    const blank = lines.findIndex((line) => line.trim().length === 0);
+    expect(blank).toBe(-1);
     expect(lines[0]!).toBe('set_target_properties(');
     expect(lines[1]!).toBe('  systemwidediags_tests');
     // From the config, indentt args after the first by 1 more level for 'add_executable'
     expect(lines[2]!).toBe('  PROPERTIES');
     expect(lines[3]!).toBe('    LINK_FLAGS "/PDB:systemwidediags_tests.pdb"');
     expect(lines[4]!).toBe(')');
+  });
+  test('[FAILING] formatting: list control keywords', ()=>{
+    const cmakeContent='list(APPEND my_list SORT UNIQUE item1 item2 item3 item4 item5 item6 item7 item8 item9)';
+    const res = printString(cmakeContent);
+    console.log(res);
+    expect(res).toBeDefined();
+    expect(res.indexOf('\r')).toBe(-1);
+    // There should be no blank lines in our output
+    const lines = res.split('\n');
+    const blank = lines.findIndex((line) => line.trim().length === 0);
+    expect(blank).toBe(-1);
+    expect(lines[0]!).toBe('list(');
+    expect(lines[1]!).toBe('  my_list');
+    expect(lines[2]!).toBe('  SORT');
+    expect(lines[3]!).toBe('  UNIQUE');
+    expect(lines[4]!).toBe('  item1');
+    expect(lines[5]!).toBe('  item2');
+    expect(lines[6]!).toBe('  item3');
+    expect(lines[7]!).toBe('  item4');
+    expect(lines[8]!).toBe('  item5');
+    expect(lines[9]!).toBe('  item6');
+    expect(lines[10]!).toBe('  item7');
+    expect(lines[11]!).toBe('  item8');
+    expect(lines[12]!).toBe('  item9');
+    expect(lines[13]!).toBe(')');
   });
 });
