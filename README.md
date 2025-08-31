@@ -4,10 +4,10 @@
 
 ### CMake files can't be made any prettier, but they should at least be _passable_
 
-This is a CMake file formatter, spiritually inspired by Chris Chedeau's
-excellent [Javascript formatter, Prettier](https://prettier.io). Having also had
-to deal with
-[clang-format](https://clang.llvm.org/docs/ClangFormatStyleOptions.html)'s
+This is a CMake file formatter, spiritually inspired by
+[Christopher Chedeau's](https://blog.vjeux.com/) excellent
+[Javascript formatter, Prettier](https://prettier.io). Having also had to deal
+with [clang-format](https://clang.llvm.org/docs/ClangFormatStyleOptions.html)'s
 embrace of every random configuration choice anyone might have come up with, I
 very much prefer
 [Prettier's philosophy](https://prettier.io/docs/option-philosophy). To be fair,
