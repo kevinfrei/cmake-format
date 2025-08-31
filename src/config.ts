@@ -8,6 +8,7 @@ import {
 } from '@freik/typechk';
 import * as fs from 'fs';
 import * as path from 'path';
+import defaultConfig from './defaults.json';
 
 export type CommandConfig = {
   controlKeywords: string[];
@@ -78,100 +79,8 @@ Style guide:
 *************************************
 
 */
-// TODO: Put this stuff into a configuration file
-export const defaultCfg: Configuration = {
-  useTabs: false,
-  tabWidth: 2,
-  endOfLine: '\n', // This one doesn't much matter for console.log output
-  printWidth: 80,
-  commands: {
-    add_library: {
-      controlKeywords: [
-        'STATIC',
-        'SHARED',
-        'MODULE',
-        'OBJECT',
-        'INTERFACE',
-        'UNKNOWN',
-        'ALIAS',
-      ],
-      options: ['GLOBAL', 'EXCLUDE_FROM_ALL', 'IMPORTED'],
-    },
-    add_executable: {
-      options: [
-        'WIN32',
-        'MACOSX_BUNDLE',
-        'EXCLUDE_FROM_ALL',
-        'IMPORTED',
-        'ALIAS',
-      ],
-    },
-    execute_process: {
-      controlKeywords: [
-        'COMMAND',
-        'WORKING_DIRECTORY',
-        'RESULT_VARIABLE',
-        'OUTPUT_VARIABLE',
-        'ERROR_VARIABLE',
-        'INPUT_FILE',
-        'OUTPUT_FILE',
-        'ERROR_FILE',
-        'TIMEOUT',
-        'ECHO_ERROR_VARIABLE',
-        'ECHO_OUTPUT_VARIABLE',
-        'ECHO_ERROR_VARIABLE',
-        'OUTPUT_STRIP_TRAILING_WHITESPACE',
-      ],
-    },
-    list: {
-      controlKeywords: [
-        'APPEND',
-        'INSERT',
-        'REMOVE_AT',
-        'REMOVE_ITEM',
-        'FIND',
-        'LENGTH',
-        'GET',
-        'SUBLIST',
-        'SORT',
-        'UNIQUE',
-      ],
-    },
-    set_target_properties: {
-      controlKeywords: ['PROPERTIES'],
-    },
-    target_sources: {
-      controlKeywords: [
-        'INTERFACE',
-        'PUBLIC',
-        'PRIVATE',
-        'FILE_SET',
-        'TYPE',
-        'BASE_DIRS',
-        'FILES',
-      ],
-      options: ['HEADERS', 'CXX_MODULES'],
-    },
-    target_precompile_headers: {
-      controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE', 'REUSE_FROM'],
-    },
-    target_compile_definitions: {
-      controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
-    },
-    target_include_directories: {
-      controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
-    },
-    target_link_libraries: {
-      controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
-    },
-    set: { indentAfter: 0 },
-  },
-  /*
-  sort: {
-    set: { skip: 1 },
-  },
-  */
-};
+
+export const defaultCfg: Configuration = defaultConfig as Configuration;
 
 export function getEOL(config: Partial<Configuration>): string {
   return config.endOfLine ?? defaultCfg.endOfLine;
