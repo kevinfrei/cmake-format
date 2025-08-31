@@ -26,10 +26,12 @@ export type UnquotedString = {
   value: string;
 };
 
+/*
 export type VariableReference = {
   type: ASTNode.VariableReference;
   name: string;
 };
+*/
 
 export type BracketedString = {
   type: ASTNode.Bracketed;
@@ -45,7 +47,7 @@ export type GroupedArg = {
 export type NonCommentArg = (
   | QuotedString
   | UnquotedString
-  | VariableReference
+  // | VariableReference
   | BracketedString
   | GroupedArg
 ) & {

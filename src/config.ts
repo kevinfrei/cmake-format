@@ -161,7 +161,9 @@ export const defaultCfg: Configuration = {
     target_include_directories: {
       controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
     },
-    target_link_libraries: { indentAfter: 0 },
+    target_link_libraries: {
+      controlKeywords: ['INTERFACE', 'PUBLIC', 'PRIVATE'],
+    },
     set: { indentAfter: 0 },
   },
   /*
