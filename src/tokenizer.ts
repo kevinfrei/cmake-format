@@ -368,13 +368,14 @@ export function MakeTokenStream(input: string): TokenStream {
     let curTok = '';
     for (lineNumber = 0; lineNumber < lines.length; lineNumber++) {
       const line = lines[lineNumber]!;
-      if (state.state === LineState.Clear && line.trim().length === 0) {
-        // We want to treat empty lines as significant, but only *single* EOL's.
+      if (state.state === LineState.Clear) {
         curTok = MaybePush(curTok);
-        if (prevToken().type !== TokenType.EmptyLine) {
-          pushToken(MakeEmptyLine());
+        if (line.trim().length === 0) {       // We want to treat empty lines as significant, but only *single* EOL's.
+          if (prevToken().type !== TokenType.EmptyLine) {
+            pushToken(MakeEmptyLine());
+          }
+          continue;
         }
-        continue;
       }
       for (linePos = 0; linePos < line.length; linePos++) {
         switch (state.state) {
