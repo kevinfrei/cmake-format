@@ -234,12 +234,15 @@ however, appear to have gone _all the way down_ this rabbit-hole.
 
 ## TODO's
 
-- [] Build out a condition parser. `if`/`while`/`elseif` condition expressions
-  wind up getting munged pretty badly, unfortunately.
-- [] Make a parse-tree checker, so that I can validate full parse tree
-  round-tripping, instead of token-level-only validation.
-- [] Expand `.passablerc.json` configuration to a broader set of options, like
-  Prettier (and every other JS-based config tool)
-- [] Merge command configurations from the config file, instead of strict
-  replacement, so to override or add a single item, you don't have to duplicate
-  everything else.
+- [ ] Build out a condition parser. `if`/`while`/`elseif` condition expressions
+      wind up getting munged pretty badly, unfortunately.
+- [ ] Make a parse-tree checker, so that I can validate full parse tree
+      round-tripping, instead of token-level-only validation.
+- [ ] Expand `.passablerc.json` configuration to a broader set of options, like
+      Prettier (and every other JS-based config tool)
+- [ ] Merge command configurations from the config file, instead of strict
+      replacement, so to override or add a single item, you don't have to
+      duplicate everything else.
+- [ ] As always: Improve documentation
+- [ ] Maybe export the internals a bit? The printer/parser/tokenizer might be
+      useulf to others?
