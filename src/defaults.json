@@ -4,6 +4,10 @@
   "endOfLine": "\n",
   "printWidth": 80,
   "commands": {
+    "add_custom_target": {
+      "controlKeywords": ["COMMAND", "DEPENDS", "BYPRODUCTS", "WORKING_DIRECTORY", "COMMENT", "JOB_POOL", "JOB_SERVER_AWARE", "SOURCES"],
+      "options": ["ALL", "VERBATIM", "USES_TERMINAL", "COMMAND_EXPAND_LISTS"]
+    },
     "add_library": {
       "controlKeywords": [
         "STATIC",
@@ -24,6 +28,10 @@
         "IMPORTED",
         "ALIAS"
       ]
+    },
+    "block": {
+      "controlKeywords": ["PROPAGATE"],
+      "options": ["SCOPE_FOR", "POLICIES", "VARIABLES"]
     },
     "execute_process": {
       "controlKeywords": [
@@ -81,6 +89,9 @@
     "target_link_libraries": {
       "controlKeywords": ["INTERFACE", "PUBLIC", "PRIVATE"]
     },
+    "if": { "controlKeywords": ["AND", "OR"], "options": ["NOT"] },
+    "elseif": { "controlKeywords": ["AND", "OR"], "options": ["NOT"] },
+    "while": { "controlKeywords": ["AND", "OR"], "options": ["NOT"] },
     "set": { "indentAfter": 0 }
   }
 }
