@@ -7,7 +7,7 @@ import { parseCMakeFile } from './src/parser';
 import { printCMakeToString } from './src/printer';
 import { MakeTokenStream } from './src/tokenizer';
 
-const appName = process.argv[1]!.split(/[\\/]/).pop();
+const appName = 'passable-node';
 
 function usage() {
   console.error(`Usage: ${appName} <files...>`);

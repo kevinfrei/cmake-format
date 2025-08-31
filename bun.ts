@@ -9,7 +9,7 @@ import {
   MakeTokenStream,
 } from './src/tokenizer.js';
 
-const appName = process.argv[1]!.split(/[\\/]/).pop();
+const appName = 'passable';
 
 function usage() {
   console.error(`Usage: ${appName} <files...>`);
