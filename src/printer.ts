@@ -1,4 +1,10 @@
-import { chkTupleOf, isArray, isString, isUndefined, typecheck } from '@freik/typechk';
+import {
+  chkTupleOf,
+  isArray,
+  isString,
+  isUndefined,
+  typecheck,
+} from '@freik/typechk';
 import {
   type CommandConfigSet,
   type Configuration,
@@ -120,14 +126,20 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
     return res;
   }
 
-  // TODO: Handle grouped arg that needs splitting
+  // Format an argument on it's own line
   function formatArgLine(arg: Argument): void {
-    lines.push(
-      indent(
-        formatArg(arg) +
-          (arg.type === ASTNode.BlockComment ? '' : maybeTail(arg.tailComment)),
-      ),
-    );
+    if (arg.type === ASTNode.Group) {
+      lines.push(formatInvoke('', arg.value) + maybeTail(arg.tailComment));
+    } else {
+      lines.push(
+        indent(
+          formatArg(arg) +
+            (arg.type === ASTNode.BlockComment
+              ? ''
+              : maybeTail(arg.tailComment)),
+        ),
+      );
+    }
   }
 
   // For an arg list that doesn't fit on one line:
@@ -174,9 +186,13 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
   function isArgGroup(item: Argument | ArgGroup | undefined): item is ArgGroup {
     return !isUndefined(item) && isArray(item) && item.length === 2;
   }
-  function groupArgsByControlKeyword(argList: ArgList, controlKeywords: Set<string>, options: Set<string>): ArgGroups {
+  function groupArgsByControlKeyword(
+    argList: ArgList,
+    controlKeywords: Set<string>,
+    options: Set<string>,
+  ): ArgGroups {
     const argGroup: ArgGroups = [];
-    function last() : ArgGroup | Argument | undefined {
+    function last(): ArgGroup | Argument | undefined {
       return argGroup[argGroup.length - 1];
     }
     for (const arg of argList.args) {
@@ -196,8 +212,8 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
       }
       const lst = last();
       if (isArgGroup(lst)) {
-          // We're in an arg group, add this guy...
-          lst[1].push(arg);
+        // We're in an arg group, add this guy...
+        lst[1].push(arg);
       } else {
         // We're not in an arg group, just add it to the main group
         argGroup.push(arg);
@@ -210,8 +226,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
   function formatInvoke(prefix: string, argList?: ArgList): string {
     const single = singleLineLen(argList || { args: [] });
     if (single > 0 && availableWidth() >= single + prefix.length) {
-      const lineStart = indent(prefix);
-      return `${lineStart}(${formatArgList(argList)})`;
+      return indent(`${prefix}(${formatArgList(argList)})`);
     }
     // It's on multiple lines.
     const cmdConfigPair = cmdToConfig.get(prefix);
@@ -225,13 +240,17 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
     } else {
       // We have (at least one) control keyword.
       // Let's try to print each grouping on it's own line, if possible:
-      const groups = groupArgsByControlKeyword(argList, cmdCfg.controlKeywords, cmdCfg.options);
+      const groups = groupArgsByControlKeyword(
+        argList,
+        cmdCfg.controlKeywords,
+        cmdCfg.options,
+      );
       for (const argOrGroup of groups) {
         if (isArgGroup(argOrGroup)) {
           const [name, args] = argOrGroup;
           lines.push(indent(`${name}`));
           level++;
-          const maybeSingle = singleLineLen({ args })
+          const maybeSingle = singleLineLen({ args });
           if (maybeSingle > 0 && availableWidth() >= maybeSingle) {
             const line = indent(formatArgList({ args }));
             if (line.trim().length > 0) {
