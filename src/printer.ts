@@ -181,10 +181,15 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
     level = originallevel;
   }
 
-  type ArgGroup = [string, Argument[]];
+  type ArgGroup = [string, Argument[], string | undefined];
   type ArgGroups = (Argument | ArgGroup)[];
   function isArgGroup(item: Argument | ArgGroup | undefined): item is ArgGroup {
-    return !isUndefined(item) && isArray(item) && item.length === 2;
+    return (
+      !isUndefined(item) &&
+      isArray(item) &&
+      item.length >= 2 &&
+      item.length <= 3
+    );
   }
   function groupArgsByControlKeyword(
     argList: ArgList,
@@ -200,7 +205,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
         const argVal = arg.value.toUpperCase();
         if (controlKeywords.has(argVal)) {
           // We're starting a new group;
-          argGroup.push([argVal, []]);
+          argGroup.push([argVal, [], arg.tailComment]);
           continue;
         } else if (options.has(argVal)) {
           // Just found an option, so end the current group
@@ -247,8 +252,8 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
       );
       for (const argOrGroup of groups) {
         if (isArgGroup(argOrGroup)) {
-          const [name, args] = argOrGroup;
-          lines.push(indent(`${name}`));
+          const [name, args, tailComment] = argOrGroup;
+          lines.push(indent(`${name}` + maybeTail(tailComment)));
           level++;
           const maybeSingle = singleLineLen({ args });
           if (maybeSingle > 0 && availableWidth() >= maybeSingle) {
