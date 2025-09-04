@@ -246,10 +246,11 @@ PUBLIC
     expect(lines[3]!).toBe('    LINK_FLAGS "/PDB:systemwidediags_tests.pdb"');
     expect(lines[4]!).toBe(')');
   });
-  test('[FAILING] formatting: list control keywords', ()=>{
-    const cmakeContent='list(APPEND my_list SORT UNIQUE item1 item2 item3 item4 item5 item6 item7 item8 item9)';
+  test('formatting: list control keywords', () => {
+    const cmakeContent =
+      'list(APPEND my_list SORT UNIQUE item1 item2 item3 item4 item5 item6 item7 item8 item9)';
     const res = printString(cmakeContent);
-    console.log(res);
+    // console.log(res);
     expect(res).toBeDefined();
     expect(res.indexOf('\r')).toBe(-1);
     // There should be no blank lines in our output
@@ -261,7 +262,9 @@ PUBLIC
     expect(lines[2]!).toBe('    my_list');
     expect(lines[3]!).toBe('  SORT');
     expect(lines[4]!).toBe('  UNIQUE');
-    expect(lines[5]!).toBe('    item1 item2 item3 item4 item5 item6 item7 item8 item9');
+    expect(lines[5]!).toBe(
+      '    item1 item2 item3 item4 item5 item6 item7 item8 item9',
+    );
     expect(lines[6]!).toBe(')');
   });
 });

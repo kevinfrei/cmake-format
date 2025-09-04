@@ -3,6 +3,7 @@ import { expect, test } from 'bun:test';
 import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import {
+  compareASTsFile,
   compareTokensFile,
   llvmRepoExists,
   printFullFile,
@@ -63,7 +64,8 @@ test(llvmTestName(), async () => {
   const failures: { path: string; fileSize: number }[] = [];
   const printFailures: { path: string; fileSize: number }[] = [];
   let success = 0;
-  let printSuccess = 0;
+  let printTokensSuccess = 0;
+  let printASTsSuccess = 0;
   for (const path of cmakeFiles) {
     // Get the file size for sorting of errors:
     const fileSize = statSync(path).size;
@@ -75,10 +77,20 @@ test(llvmTestName(), async () => {
         expect(printed.length).toBeGreaterThan(0);
       }
       success++;
-      if (compareTokensFile(path)) {
-        printSuccess++;
+      let res = compareTokensFile(path);
+      if (res === true) {
+        printTokensSuccess++;
+        expect(true).toBeTrue();
       } else {
-        printFailures.push({ path, fileSize });
+        printFailures.push({ path: `token failure: ${path} ${res}`, fileSize });
+        expect(true).toBeFalse();
+      }
+      if (compareASTsFile(path)) {
+        printASTsSuccess++;
+        expect(true).toBeTrue();
+      } else {
+        printFailures.push({ path: `AST failure: ${path}`, fileSize });
+        expect(true).toBeFalse();
       }
     } catch (error) {
       console.error(`Error processing file ${path}:`, error);
@@ -95,14 +107,14 @@ test(llvmTestName(), async () => {
       (a, b) => a.fileSize - b.fileSize,
     );
     const pfailStr =
-      printSuccess !== success
+      printTokensSuccess !== success
         ? `
 ==> ${sortedPrintFailures.map((f) => `${f.path} [${f.fileSize} bytes]`).join('\n==> ')}
 Print failures: ${printFailures.length} out of ${success} total`
         : '';
     throw new Error(`Failed to process files:
 --> ${sortedFailures.map((f) => `${f.path} [${f.fileSize} bytes]`).join('\n--> ')}
-${printSuccess}Processed files: Failed ${failures.length} out of ${success + failures.length} total.
+${printTokensSuccess}Processed files: Failed ${failures.length} out of ${success + failures.length} total.
 Failure rate: ${failureRate}%${pfailStr}`);
   }
 });
