@@ -14,7 +14,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if(MSVC)
   # For windows/VC++, run normal exception handling & windows 10 APIs
   set(CMAKE_CXX_FLAGS "/EHsc /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00")
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # untested.
     # I wonder if RTC still works. I should use it, since I did the work:
     add_compile_options(/W4 /Od /RTC1 /D_CRT_SECURE_NO_WARNINGS)
@@ -25,7 +25,15 @@ if(MSVC)
 else()
   # For non-windows compilers, enable sanitizers and stuff
   add_compile_options(-Wpedantic -Wall -Wextra -Werror -pedantic)
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  if(
+    CMAKE_BUILD_TYPE
+    STREQUAL
+    "Debug"
+    OR
+      (CMAKE_BUILD_WITH_INSTALL_NAME_DIR STREQUAL "DEBUGDIR")
+    OR
+      (CMAKE_LINK_LIBRARY_USING_MODULES_SUPPORTED STREQUAL "LONG_STRING_TOO_LONG_TO_FIT_ON_A SINGLE_LINE")
+  )
     add_compile_options(-fsanitize=address,undefined -O0 -g)
     add_link_options(-fsanitize=address,undefined -O0 -g)
   else()
@@ -38,36 +46,36 @@ endif()
 # Find Conan2 generated libraries
 include(build/ConanLibImports.cmake)
 
-if (${USE_COMMON_PCH})
-add_library(pch_target OBJECT cpp/pch.cpp)
-target_precompile_headers(
-  pch_target
-  PRIVATE
-  <atomic>
-  <cctype>
-  <chrono>
-  <cstdint>
-  <cstdlib>
-  <filesystem>
-  <fstream>
-  <functional>
-  <iomanip>
-  <iostream>
-  <map>
-  <optional>
-  <random>
-  <set>
-  <shared_mutex>
-  <sstream>
-  <string_view>
-  <string>
-  <tuple>
-  <type_traits>
-  <unordered_map>
-  <unordered_set>
-  <utility>
-  <vector>
-)
+if(${USE_COMMON_PCH})
+  add_library(pch_target OBJECT cpp/pch.cpp)
+  target_precompile_headers(
+    pch_target
+    PRIVATE
+      <atomic>
+      <cctype>
+      <chrono>
+      <cstdint>
+      <cstdlib>
+      <filesystem>
+      <fstream>
+      <functional>
+      <iomanip>
+      <iostream>
+      <map>
+      <optional>
+      <random>
+      <set>
+      <shared_mutex>
+      <sstream>
+      <string_view>
+      <string>
+      <tuple>
+      <type_traits>
+      <unordered_map>
+      <unordered_set>
+      <utility>
+      <vector>
+  )
 endif()
 
 add_subdirectory(cpp)

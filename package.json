@@ -37,7 +37,7 @@
     "typechk": "tsc --noemit",
     "types": "tsc",
     "type": "tsc",
-    "start": "bun run index.ts",
+    "start": "bun run bun.ts",
     "test": "bun test",
     "lint": "eslint . --ext .ts",
     "format": "tools format bun",
