@@ -32,7 +32,11 @@ else()
     OR
       (CMAKE_BUILD_WITH_INSTALL_NAME_DIR STREQUAL "DEBUGDIR")
     OR
-      (CMAKE_LINK_LIBRARY_USING_MODULES_SUPPORTED STREQUAL "LONG_STRING_TOO_LONG_TO_FIT_ON_A SINGLE_LINE")
+      (
+        CMAKE_LINK_LIBRARY_USING_MODULES_SUPPORTED
+        STREQUAL
+        "LONG_STRING_TOO_LONG_TO_FIT_ON_A SINGLE_LINE"
+      )
   )
     add_compile_options(-fsanitize=address,undefined -O0 -g)
     add_link_options(-fsanitize=address,undefined -O0 -g)
