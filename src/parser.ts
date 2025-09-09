@@ -68,9 +68,83 @@ export type CommandInvocation = {
   tailComment?: string;
 };
 
+export enum ConditionType {
+  Unary = 'Unary',
+  Binary = 'Binary',
+  Parenthesized = 'Parenthesized',
+  Simple = 'Simple',
+}
+
+export type UnaryOperator =
+  | 'NOT'
+  | 'COMMAND'
+  | 'POLICY'
+  | 'TARGET'
+  | 'TEST'
+  | 'DEFINED'
+  | 'EXISTS'
+  | 'IS_READABLE'
+  | 'IS_WRITABLE'
+  | 'IS_EXECUTABLE'
+  | 'IS_DIRECTORY'
+  | 'IS_SYMLINK'
+  | 'IS_ABSOLUTE';
+
+export type BinaryOperator =
+  | 'AND'
+  | 'OR'
+  | 'STREQUAL'
+  | 'EQUAL'
+  | 'LESS'
+  | 'GREATER'
+  | 'MATCHES'
+  | 'IN_LIST'
+  | 'LESS_EQUAL'
+  | 'GREATER_EQUAL'
+  | 'IS_NEWER_THAN'
+  | 'STRLESS'
+  | 'STRGREATER'
+  | 'STRGREATER_EQUAL'
+  | 'STRLESS_EQUAL'
+  | 'VERSION_LESS'
+  | 'VERSION_GREATER'
+  | 'VERSION_EQUAL'
+  | 'VERSION_LESS_EQUAL'
+  | 'VERSION_GREATER_EQUAL'
+  | 'PATH_EQUAL';
+
+export type SimpleCondition = {
+  type: ConditionType.Simple;
+  operand: NonCommentArg;
+};
+
+export type ParenthesizedCondition = {
+  type: ConditionType.Parenthesized;
+  condition: Condition;
+};
+
+export type UnaryCondition = {
+  type: ConditionType.Unary;
+  operator: UnaryOperator;
+  operand: Condition;
+};
+
+export type BinaryCondition = {
+  type: ConditionType.Binary;
+  operator: BinaryOperator;
+  left: Condition;
+  right: Condition;
+};
+
+export type Condition =
+  | ParenthesizedCondition
+  | UnaryCondition
+  | BinaryCondition
+  | SimpleCondition;
+
 export type ConditionalBlock = {
   type: ASTNode.ConditionalBlock;
-  condition: ArgList;
+  condition: Condition;
   body: Statement[];
   elseifBlocks: ElseIfBlock[];
   elseBlock?: ElseBlock;
