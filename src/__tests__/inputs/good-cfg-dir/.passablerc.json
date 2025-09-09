@@ -13,6 +13,10 @@
     },
     "target_link_libraries": {
       "controlKeywords": ["INTERFACE", "PUBLIC", "PRIVATE"]
+    },
+    "custom_command": {
+      "controlKeywords": ["ONE", "TWO"],
+      "options": ["THREE", "FOUR"]
     }
   }
 }

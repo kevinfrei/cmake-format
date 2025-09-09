@@ -6,9 +6,14 @@ function isIn(array: string[], value: string): boolean {
   return array.indexOf('src/__tests__/inputs/' + value) !== -1;
 }
 
+function genericize(path: string[]): string[] {
+  return path.map((p) => p.replace(/\\/g, '/'));
+}
+
 describe('Expando (globbing)', () => {
   test('bun native glob patterns', () => {
-    const files = expando(['**/CMakeLists.txt', '**/*.cmake']);
+    const files = genericize(expando(['**/CMakeLists.txt', '**/*.cmake']));
+    console.log(files);
     expect(isIn(files, 'CMakeLists.txt')).toBe(true);
     expect(isIn(files, 'good-cfg-dir/CMakeLists.txt')).toBe(true);
     expect(isIn(files, 'bad-cfg-dir/CMakeLists.txt')).toBe(true);
@@ -23,7 +28,8 @@ describe('Expando (globbing)', () => {
     expect(isIn(files, 'cassette-cpp.cmake')).toBe(true);
   });
   test('node glob patterns', () => {
-    const files = nodeExpando(['**/CMakeLists.txt', '**/*.cmake']);
+    const files = genericize(nodeExpando(['**/CMakeLists.txt', '**/*.cmake']));
+    console.log(files);
     expect(isIn(files, 'CMakeLists.txt')).toBe(true);
     expect(isIn(files, 'good-cfg-dir/CMakeLists.txt')).toBe(true);
     expect(isIn(files, 'bad-cfg-dir/CMakeLists.txt')).toBe(true);
