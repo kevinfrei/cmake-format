@@ -4,7 +4,7 @@ import { loadConfig } from '../config';
 import { getTestFileName, printString } from './test-helpers';
 
 describe('config', () => {
-  test('file', () => {
+  test('parsing (or not) a file', () => {
     const cwd = process.cwd();
     try {
       process.chdir(
@@ -16,7 +16,7 @@ describe('config', () => {
       expect(config.tabWidth).toBe(3);
       expect(config.useTabs).toBe(true);
       expect(config.commands).toBeDefined();
-      expect(Object.keys(config.commands!).length).toBe(3);
+      expect(Object.keys(config.commands!).length).toBe(4);
       expect(config.commands!.add_executable).toBeDefined();
       expect(Object.keys(config.commands!.add_executable!).length).toBe(2);
       expect(config.commands!.add_executable!.controlKeywords).toEqual([
@@ -30,6 +30,16 @@ describe('config', () => {
       expect(config.commands!.set).toBeDefined();
       expect(Object.keys(config.commands!.set!).length).toBe(1);
       expect(config.commands!.set!.indentAfter).toBe(0);
+      expect(config.commands!.custom_command).toBeDefined();
+      expect(Object.keys(config.commands!.custom_command!).length).toBe(2);
+      expect(config.commands!.custom_command!.controlKeywords).toEqual([
+        'ONE',
+        'TWO',
+      ]);
+      expect(config.commands!.custom_command!.options).toEqual([
+        'THREE',
+        'FOUR',
+      ]);
       process.chdir('../../bad-cfg-dir');
       console.error('*******************************');
       console.error('* EXPECTED ERROR OUTPUT BEGIN *');
@@ -40,6 +50,18 @@ describe('config', () => {
       console.error('*******************************');
       expect(cfg).toBeDefined();
       expect(Object.keys(cfg).length).toBe(0);
+    } finally {
+      process.chdir(cwd);
+    }
+  });
+  test('merging commands from a single config with the defaults', () => {
+    const cwd = process.cwd();
+    try {
+      process.chdir(
+        path.dirname(getTestFileName('good-cfg-dir/test-dir/.passablerc.json')),
+      );
+      const config = loadConfig();
+      expect(config).toBeDefined();
     } finally {
       process.chdir(cwd);
     }
