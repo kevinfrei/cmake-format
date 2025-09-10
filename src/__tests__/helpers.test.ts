@@ -13,7 +13,7 @@ function genericize(path: string[]): string[] {
 describe('Expando (globbing)', () => {
   test('bun native glob patterns', () => {
     const files = genericize(expando(['**/CMakeLists.txt', '**/*.cmake']));
-    console.log(files);
+    // console.log(files);
     expect(isIn(files, 'CMakeLists.txt')).toBe(true);
     expect(isIn(files, 'good-cfg-dir/CMakeLists.txt')).toBe(true);
     expect(isIn(files, 'bad-cfg-dir/CMakeLists.txt')).toBe(true);
@@ -29,7 +29,7 @@ describe('Expando (globbing)', () => {
   });
   test('node glob patterns', () => {
     const files = genericize(nodeExpando(['**/CMakeLists.txt', '**/*.cmake']));
-    console.log(files);
+    // console.log(files);
     expect(isIn(files, 'CMakeLists.txt')).toBe(true);
     expect(isIn(files, 'good-cfg-dir/CMakeLists.txt')).toBe(true);
     expect(isIn(files, 'bad-cfg-dir/CMakeLists.txt')).toBe(true);

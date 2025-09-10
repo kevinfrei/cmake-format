@@ -53,6 +53,10 @@ describe('config', () => {
     } finally {
       process.chdir(cwd);
     }
+    // This won't work if the repo has a parent config file :/
+    const noConfig = loadConfig();
+    expect(noConfig).toBeDefined();
+    expect(Object.keys(noConfig).length).toBe(0);
   });
   test('merging commands from a single config with the defaults', () => {
     const cwd = process.cwd();
