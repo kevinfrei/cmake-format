@@ -106,6 +106,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
     return len === 1 ? 2 : len; // Handle '()' specially...
   }
 
+  // Format an arg list on a single line
   function formatArgList(argList?: ArgList): string {
     let res = '';
     let first = true;
@@ -119,7 +120,8 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
         }
         res += formatArg(arg);
         if (arg.type !== ASTNode.BlockComment && arg.tailComment) {
-          res += maybeTail(arg.tailComment, true);
+          // This should never happen, because singleLineLen should have caught it
+          throw new Error('Cannot format arg list on a single line due to tail comment');
         }
       }
     }

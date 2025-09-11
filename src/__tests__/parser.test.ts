@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { ASTNode, type BlockComment } from '../parser';
+import { ASTNode, mkBracketed, type BlockComment } from '../parser';
 import { parseString, parseTestFile } from './test-helpers';
 
 describe('Parser', () => {
@@ -26,6 +26,7 @@ describe('Parser', () => {
   test('throws on malformed input 2', () => {
     const input = '( this is bad # missing parentheses';
     expect(() => parseString(input)).toThrow();
+    expect(() => mkBracketed("asdf")).toThrow();
   });
 
   test('throws on malformed input 3', () => {
