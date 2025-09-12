@@ -136,9 +136,9 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
       lines.push(
         indent(
           formatArg(arg) +
-            (arg.type === ASTNode.BlockComment
-              ? ''
-              : maybeTail(arg.tailComment)),
+          (arg.type === ASTNode.BlockComment
+            ? ''
+            : maybeTail(arg.tailComment)),
         ),
       );
     }
@@ -147,36 +147,19 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
   // For an arg list that doesn't fit on one line:
   function formatArgListLines(
     argList?: ArgList,
-    cmdConfig: CommandConfigSet = emptyCmdConfigSet,
+    cmdConfig?: CommandConfigSet,
   ): void {
     if (!argList) return;
     let originallevel = level;
-    let underControl = false;
+    const cmdCfg = cmdConfig ?? emptyCmdConfigSet;
     for (let i = 0; i < argList.args.length; i++) {
       const arg = argList.args[i]!;
-      if (arg.type === ASTNode.UnquotedString) {
-        if (cmdConfig.controlKeywords.has(arg.value.toUpperCase())) {
-          arg.value = arg.value.toUpperCase();
-          // If the argument is a control keyword and we were under a different
-          // control keyword, we need to unindent it
-          if (underControl) {
-            level--;
-          }
-        } else if (cmdConfig.options.has(arg.value.toUpperCase())) {
-          arg.value = arg.value.toUpperCase();
-        }
+      if (arg.type === ASTNode.UnquotedString && cmdCfg.options.has(arg.value.toUpperCase())) {
+        arg.value = arg.value.toUpperCase();
       }
       formatArgLine(arg);
-      if (
-        arg.type === ASTNode.UnquotedString &&
-        cmdConfig.controlKeywords.has(arg.value.toUpperCase())
-      ) {
-        // If the argument is a control keyword we need to indent more
-        level++;
-        underControl = true;
-      }
       // If we're after the indentAfter point, we need to increase the level
-      if (i === cmdConfig.indentAfter) {
+      if (i === cmdCfg.indentAfter) {
         level++;
       }
     }
@@ -291,7 +274,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
     for (const elseif of cond.elseifBlocks) {
       lines.push(
         formatInvoke('elseif', elseif.condition) +
-          maybeTail(elseif.tailComment),
+        maybeTail(elseif.tailComment),
       );
       level++;
       elseif.body.map(printStatement);
@@ -301,7 +284,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
     if (cond.elseBlock) {
       lines.push(
         formatInvoke('else', cond.elseBlock?.elseArgs) +
-          maybeTail(cond.elseBlock.tailComment),
+        maybeTail(cond.elseBlock.tailComment),
       );
       level++;
       cond.elseBlock.body.map(printStatement);
