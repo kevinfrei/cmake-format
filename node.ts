@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { loadConfig, type Configuration } from './src/config';
-import { expando } from './src/node-helpers';
-import { parseCMakeFile } from './src/parser';
-import { printCMakeToString } from './src/printer';
-import { MakeTokenStream } from './src/tokenizer';
+import { loadConfig, type Configuration } from './src/config.js';
+import { expando } from './src/node-helpers.js';
+import { parseCMakeFile } from './src/parser.js';
+import { printCMakeToString } from './src/printer.js';
+import { MakeTokenStream } from './src/tokenizer.js';
 
 const appName = 'passable-node';
 

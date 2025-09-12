@@ -293,4 +293,44 @@ PUBLIC
     );
     expect(lines[6]!).toBe(')');
   });
+  test('formatting: control keyword merging', () => {
+    // This should use the custom formatting from the .passablerc.json
+    // in good-cfg-dir/test-dir, merging with the defaults for anything
+    // not specified there (so, list's control keywords)
+    const cwd = process.cwd();
+    try {
+      process.chdir(
+        path.dirname(getTestFileName('good-cfg-dir/test-dir/.passablerc.json')),
+      );
+      const config = loadConfig();
+      // A couple control keywords, and an option
+      const cmakeContent = `custom_command(myApp ONE value value2 three
+        two value3 value 5 thingy four value6 )
+        list(append my_list sort item1 item2 item3 item4 item5)`;
+      const res = printString(cmakeContent, config);
+      // console.log(res);
+      expect(res).toBeDefined();
+      expect(res.indexOf('\r')).toBe(-1);
+      // There should be no blank lines in our output
+      const lines = res.split('\n');
+      const blank = lines.findIndex((line) => line.trim().length === 0);
+      expect(blank).toBe(-1);
+      expect(lines[0]!).toBe('custom_command(');
+      expect(lines[1]!).toBe('\tmyApp');
+      // From the config, indent args after the first by 1 more level for 'custom_command'
+      expect(lines[2]!).toBe('\tONE');
+      expect(lines[3]!).toBe('\t\tvalue value2');
+      expect(lines[4]!).toBe('\tTHREE');
+      expect(lines[5]!).toBe('\tTWO');
+      expect(lines[6]!).toBe('\t\tvalue3 value 5 thingy');
+      expect(lines[7]!).toBe('\tFOUR');
+      expect(lines[8]!).toBe('\tvalue6');
+      expect(lines[9]!).toBe(')');
+      expect(lines[10]!).toBe(
+        'list(APPEND my_list SORT item1 item2 item3 item4 item5)',
+      );
+    } finally {
+      process.chdir(cwd);
+    }
+  });
 });

@@ -139,9 +139,9 @@ describe('Token Stream preservation', () => {
     );
     const output = printCMakeToString(ast, { printWidth: 80 });
     const lines = output.split('\n');
-    console.log(lines);
+    // console.log(lines);
     expect(lines.length).toBe(9);
-    expect(lines[0]!.trim()).toBe(      'set('    );
+    expect(lines[0]!.trim()).toBe('set(');
     expect(lines[1]!.trim()).toBe('file_list');
     expect(lines[2]!.trim()).toBe('foo.cpp');
     expect(lines[3]!.trim()).toBe('bar.cpp');
@@ -152,15 +152,19 @@ describe('Token Stream preservation', () => {
     expect(lines[8]!.trim()).toBe('');
   });
   test('Some control keyword formatting', () => {
-    const ast = parseString(      'list(a_list APPEND my_list item0 item1 item155 thing thigner thingy foobar FIND item2 item3)'    );
-        const output = printCMakeToString(ast, { printWidth: 80 });
+    const ast = parseString(
+      'list(a_list appEND my_list item0 item1 item155 thing thigner thingy foobar FIND item2 item3)',
+    );
+    const output = printCMakeToString(ast, { printWidth: 80 });
     const lines = output.split('\n');
-    console.log(output);
+    // console.log(output);
     expect(lines.length).toBe(8);
     expect(lines[0]!.trim()).toBe('list(');
     expect(lines[1]!.trim()).toBe('a_list');
     expect(lines[2]!.trim()).toBe('APPEND');
-    expect(lines[3]!.trim()).toBe('my_list item0 item1 item155 thing thigner thingy foobar');
+    expect(lines[3]!.trim()).toBe(
+      'my_list item0 item1 item155 thing thigner thingy foobar',
+    );
     expect(lines[4]!.trim()).toBe('FIND');
     expect(lines[5]!.trim()).toBe('item2 item3');
     expect(lines[6]!.trim()).toBe(')');
