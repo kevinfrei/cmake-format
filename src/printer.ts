@@ -1,10 +1,4 @@
-import {
-  chkTupleOf,
-  isArray,
-  isString,
-  isUndefined,
-  typecheck,
-} from '@freik/typechk';
+import { isArray, isUndefined } from '@freik/typechk';
 import {
   type CommandConfigSet,
   type Configuration,
@@ -52,25 +46,32 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
     return eol ? ` ${comment}${getEOL(config)}` : ` ${comment}`;
   }
 
-  function formatArg(arg: Argument): string {
+  function formatArg(arg: Argument, cmdConfig: CommandConfigSet): string {
     switch (arg.type) {
       case ASTNode.BlockComment:
         return `${arg.value}`; // TODO: Indent
       case ASTNode.QuotedString:
         return `"${arg.value}"`;
       case ASTNode.UnquotedString:
+        if (
+          cmdConfig.options.has(arg.value.toUpperCase()) ||
+          cmdConfig.controlKeywords.has(arg.value.toUpperCase())
+        ) {
+          return arg.value.toUpperCase();
+        }
         return arg.value;
       /*
       case ParserTokenType.VariableReference:
         return `\${${arg.name}}`;
         */
       case ASTNode.Group:
+        // Intentionaly drop the command config here, groups always use the default.
         return `(${formatArgList(arg.value)})`;
       case ASTNode.Bracketed:
         const eq = '='.repeat(arg.equals);
         return `[${eq}[${arg.value}]${eq}]`;
       default:
-        throw new Error(`Unknown argument type: ${arg.type}`);
+        throw new Error(`Unknown argument type: ${arg}`);
     }
   }
 
@@ -99,7 +100,8 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
         }
         len += groupLen;
       } else {
-        len += formatArg(arg).length;
+        // We don't bother with the command config here, since this is just a length check
+        len += formatArg(arg, emptyCmdConfigSet).length;
       }
       len++; // Accounts for either the space, or closing parenthesis
     }
@@ -107,7 +109,10 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
   }
 
   // Format an arg list on a single line
-  function formatArgList(argList?: ArgList): string {
+  function formatArgList(
+    argList?: ArgList,
+    cmdConfig: CommandConfigSet = emptyCmdConfigSet,
+  ): string {
     let res = '';
     let first = true;
     if (!isUndefined(argList)) {
@@ -118,27 +123,33 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
           res += maybeTail(argList.prefixTailComment, true);
           first = false;
         }
-        res += formatArg(arg);
-        if (arg.type !== ASTNode.BlockComment && arg.tailComment) {
-          // This should never happen, because singleLineLen should have caught it
-          throw new Error('Cannot format arg list on a single line due to tail comment');
-        }
+        res += formatArg(arg, cmdConfig);
+        // This should just be an assert, as the types don't allow it.
+        // if (arg.type !== ASTNode.BlockComment && arg.tailComment) {
+        // This should never happen, because singleLineLen should have caught it
+        // throw new Error(
+        // 'Cannot format arg list on a single line due to tail comment',
+        // );
+        // }
       }
     }
     return res;
   }
 
   // Format an argument on it's own line
-  function formatArgLine(arg: Argument): void {
+  function formatArgLine(
+    arg: Argument,
+    cmdConfig: CommandConfigSet = emptyCmdConfigSet,
+  ): void {
     if (arg.type === ASTNode.Group) {
       lines.push(formatInvoke('', arg.value) + maybeTail(arg.tailComment));
     } else {
       lines.push(
         indent(
-          formatArg(arg) +
-          (arg.type === ASTNode.BlockComment
-            ? ''
-            : maybeTail(arg.tailComment)),
+          formatArg(arg, cmdConfig) +
+            (arg.type === ASTNode.BlockComment
+              ? ''
+              : maybeTail(arg.tailComment)),
         ),
       );
     }
@@ -154,7 +165,10 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
     const cmdCfg = cmdConfig ?? emptyCmdConfigSet;
     for (let i = 0; i < argList.args.length; i++) {
       const arg = argList.args[i]!;
-      if (arg.type === ASTNode.UnquotedString && cmdCfg.options.has(arg.value.toUpperCase())) {
+      if (
+        arg.type === ASTNode.UnquotedString &&
+        cmdCfg.options.has(arg.value.toUpperCase())
+      ) {
         arg.value = arg.value.toUpperCase();
       }
       formatArgLine(arg);
@@ -214,17 +228,19 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
 
   // Returns the *last* line of the code being formatted
   function formatInvoke(prefix: string, argList?: ArgList): string {
-    const single = singleLineLen(argList || { args: [] });
-    if (single > 0 && availableWidth() >= single + prefix.length) {
-      return indent(`${prefix}(${formatArgList(argList)})`);
-    }
-    // It's on multiple lines.
     const cmdConfigPair = cmdToConfig.get(prefix);
     let realName = cmdConfigPair ? cmdConfigPair[0] : prefix;
+    const cmdCfg = cmdConfigPair ? cmdConfigPair[1] : emptyCmdConfigSet;
+
+    // Try to fit it all on one line.
+    const single = singleLineLen(argList || { args: [] });
+    if (single > 0 && availableWidth() >= single + prefix.length) {
+      return indent(`${realName}(${formatArgList(argList, cmdCfg)})`);
+    }
+    // It's on multiple lines.
     lines.push(indent(realName + '(' + maybeTail(argList?.prefixTailComment)));
     level++;
     // If we have a command config pair, we'll try to use the controlKeywords to group separate lines
-    const cmdCfg = cmdConfigPair ? cmdConfigPair[1] : emptyCmdConfigSet;
     if (cmdCfg.controlKeywords.size === 0 || isUndefined(argList)) {
       formatArgListLines(argList, cmdCfg);
     } else {
@@ -274,7 +290,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
     for (const elseif of cond.elseifBlocks) {
       lines.push(
         formatInvoke('elseif', elseif.condition) +
-        maybeTail(elseif.tailComment),
+          maybeTail(elseif.tailComment),
       );
       level++;
       elseif.body.map(printStatement);
@@ -284,7 +300,7 @@ function PrintAST(ast: CMakeFile, config: Partial<Configuration>): string[] {
     if (cond.elseBlock) {
       lines.push(
         formatInvoke('else', cond.elseBlock?.elseArgs) +
-        maybeTail(cond.elseBlock.tailComment),
+          maybeTail(cond.elseBlock.tailComment),
       );
       level++;
       cond.elseBlock.body.map(printStatement);

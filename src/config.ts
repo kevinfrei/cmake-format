@@ -68,15 +68,13 @@ export const chkConfig = chkPartialOf<Configuration>({
 
 Style guide:
 
-*************************************
-***   THIS ONE    ***  FALL-BACK  ***
-*************************************
-*** set(file_list *** set(        ***
-***   foo.cpp     ***   file_list ***
-***   bar.cpp     ***   foo.cpp   ***
-*** )             ***   bar.cpp   ***
-***               *** )           ***
-*************************************
+*******************
+*** set(        ***
+***   file_list ***
+***     foo.cpp ***
+***     bar.cpp ***
+*** )           ***
+*******************
 
 */
 
@@ -132,10 +130,17 @@ export function makeCommandConfigSet(config: CommandConfig): CommandConfigSet {
 }
 
 export function makeCommandConfigMap(
-  commands: Record<string, Partial<CommandConfig>>,
+  primary: Record<string, Partial<CommandConfig>>,
+  fallback: Record<string, Partial<CommandConfig>> = defaultConfig.commands,
 ): CommandConfigMap {
   const cmdMap = new Map<string, [string, CommandConfigSet]>();
-  for (const [name, config] of Object.entries(commands)) {
+  for (const [name, config] of Object.entries(fallback)) {
+    cmdMap.set(name.toLowerCase(), [
+      name,
+      makeCommandConfigSet({ ...emptyCmdConfig, ...config }),
+    ]);
+  }
+  for (const [name, config] of Object.entries(primary)) {
     cmdMap.set(name.toLowerCase(), [
       name,
       makeCommandConfigSet({ ...emptyCmdConfig, ...config }),

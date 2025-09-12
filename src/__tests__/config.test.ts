@@ -308,7 +308,7 @@ PUBLIC
         two value3 value 5 thingy four value6 )
         list(append my_list sort item1 item2 item3 item4 item5)`;
       const res = printString(cmakeContent, config);
-      console.log(res);
+      // console.log(res);
       expect(res).toBeDefined();
       expect(res.indexOf('\r')).toBe(-1);
       // There should be no blank lines in our output
@@ -326,10 +326,11 @@ PUBLIC
       expect(lines[7]!).toBe('\tFOUR');
       expect(lines[8]!).toBe('\tvalue6');
       expect(lines[9]!).toBe(')');
-      expect(lines[10]!).toBe('list(APPEND my_list SORT item1 item2 item3 item4 item5)');
+      expect(lines[10]!).toBe(
+        'list(APPEND my_list SORT item1 item2 item3 item4 item5)',
+      );
     } finally {
       process.chdir(cwd);
     }
-
   });
 });
