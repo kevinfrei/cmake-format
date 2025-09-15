@@ -5,15 +5,14 @@ import { expando } from './src/bun-helpers.js';
 import { loadConfig, type Configuration } from './src/config.js';
 import { parseCMakeFile } from './src/parser.js';
 import { printCMakeToString } from './src/printer.js';
-import {
-  MakeTokenStream,
-} from './src/tokenizer.js';
+import { MakeTokenStream } from './src/tokenizer.js';
 
 const appName = 'passable';
 
+const theFlags = new Set(['-i', '--in-place', '-w', '--write']);
 function usage() {
   console.error(`Usage: ${appName} <files...>`);
-  console.error(`or ${appName} (-i/--in-place) <files...>`);
+  console.error(`or ${appName} (${[...theFlags].join('/')}) <files...>`);
   process.exit(1);
 }
 
@@ -30,11 +29,12 @@ export function printFullFile(
 if (
   process.argv.length < 3 ||
   (process.argv.length === 3 &&
-    (process.argv[2] === '-i' || process.argv[2] === '--in-place'))
+    process.argv[2].startsWith('-') &&
+    !theFlags.has(process.argv[2]))
 ) {
   usage();
 }
-const inPlace = process.argv[2] === '-i' || process.argv[2] === '--in-place';
+const inPlace = theFlags.has(process.argv[2]);
 const filePaths = inPlace ? process.argv.slice(3) : process.argv.slice(2);
 
 // TODO: Load settings from .passable.json or .passablerc
