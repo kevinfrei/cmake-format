@@ -2,6 +2,7 @@ import {
   chkArrayOf,
   chkPartialOf,
   chkRecordOf,
+  hasField,
   isBoolean,
   isNumber,
   isString,
@@ -84,39 +85,44 @@ export function getEOL(config: Partial<Configuration>): string {
   return config.endOfLine ?? defaultCfg.endOfLine;
 }
 
-function findConfigFile(): string | undefined {
+function readConfigFile(): Partial<Configuration> | undefined {
   // Look up the directory tree for the file named ".passablerc.json"
   let currentDir = process.cwd();
   // This needs to handle both windows & *nix termination conditions:
   while (path.dirname(currentDir) != currentDir) {
     const configFile = path.join(currentDir, '.passablerc.json');
     if (fs.existsSync(configFile)) {
-      return configFile;
+      const data = fs.readFileSync(configFile, 'utf-8');
+      try {
+        const json = JSON.parse(data);
+        return chkConfig(json) ? json : {};
+      } catch (error) {
+        console.error(`Error parsing ${configFile}:`, error);
+      }
+    }
+    const packageFile = path.join(currentDir, 'package.json');
+    if (fs.existsSync(packageFile)) {
+      try {
+        const packageContent = fs.readFileSync(packageFile, 'utf-8');
+        const packageData = JSON.parse(packageContent);
+        if (hasField(packageData, 'passable')) {
+          return chkConfig(packageData.passable) ? packageData.passable : {};
+        }
+      } catch (error) {
+        console.error(`Error reading ${packageFile}:`, error);
+      }
     }
     currentDir = path.dirname(currentDir);
   }
   return;
 }
 
-function loadConfigFile(filePath: string): Partial<Configuration> {
-  try {
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
-    const data = JSON.parse(fileContent);
-    return chkConfig(data) ? data : {};
-  } catch (error) {
-    console.error(`Error parsing config file at ${filePath}:`, error);
-    return {};
-  }
-}
 
 export function loadConfig(): Partial<Configuration> {
   // Load configuration from a file or environment variables
   // Search up the directory tree for a config file
-  const configFile = findConfigFile();
-  if (configFile) {
-    return loadConfigFile(configFile);
-  }
-  return {};
+  const configFile = readConfigFile();
+  return configFile || {};
 }
 
 export function makeCommandConfigSet(config: CommandConfig): CommandConfigSet {
