@@ -39,7 +39,7 @@ if (args.length < 3) {
 }
 const inPlace = inPlaceFlags.intersection(flags).size != 0;
 const silent = silentFlags.intersection(flags).size != 0;
-const filePaths = inPlace ? process.argv.slice(3) : process.argv.slice(2);
+const filePaths = args.slice(2);
 
 // TODO: Load settings from .passable.json or .passablerc
 const allFiles = expando(filePaths);
