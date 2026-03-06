@@ -25,7 +25,13 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
     "declaration": true,
-    "outDir": "build",
+    "outDir": "build"
   },
-  "files": ["src/config.ts", "src/parser.ts", "src/printer.ts", "src/tokenizer.ts"],
+  "files": [
+    "src/config.ts",
+    "src/node-helpers.ts",
+    "src/parser.ts",
+    "src/printer.ts",
+    "src/tokenizer.ts"
+  ]
 }

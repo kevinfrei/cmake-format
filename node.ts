@@ -9,11 +9,14 @@ import { MakeTokenStream } from './src/tokenizer.js';
 
 const appName = 'passable-node';
 
-const theFlags = new Set(['-i', '--in-place', '-w', '--write']);
+const inPlaceFlags = new Set(['-i', '--in-place', '-w', '--write']);
+const silentFlags = new Set(['-q', '--quiet', '-s', '--silent']);
 
 function usage() {
   console.error(`Usage: ${appName} <files...>`);
-  console.error(`or ${appName} (${[...theFlags].join('/')}) <files...>`);
+  console.error(
+    `or ${appName} (${[...inPlaceFlags].join('/')}) (${[...silentFlags].join('/')}) <files...>`,
+  );
   process.exit(1);
 }
 
@@ -27,29 +30,29 @@ export function printFullFile(
   return printCMakeToString(ast, config);
 }
 
-if (
-  process.argv.length < 3 ||
-  (process.argv.length === 3 &&
-    process.argv[2].startsWith('-') &&
-    !theFlags.has(process.argv[2]))
-) {
+const args = process.argv.filter((val) => !val.startsWith('-'));
+const flags = new Set<string>(
+  process.argv.filter((val) => val.startsWith('-')),
+);
+if (args.length < 3) {
   usage();
 }
-const inPlace = theFlags.has(process.argv[2]);
+const inPlace = inPlaceFlags.intersection(flags).size != 0;
+const silent = silentFlags.intersection(flags).size != 0;
 const filePaths = inPlace ? process.argv.slice(3) : process.argv.slice(2);
 
 // TODO: Load settings from .passable.json or .passablerc
 const allFiles = expando(filePaths);
-if (inPlace) {
+if (inPlace && !silent) {
   console.time('Total Formatting Time');
 }
 const config = loadConfig();
 allFiles.forEach((filePath) => {
-  if (inPlace) {
+  if (inPlace && !silent) {
     console.time(`Formatting Time: ${filePath}`);
   }
   const lines = printFullFile(filePath, config);
-  if (inPlace) {
+  if (inPlace && !silent) {
     // TODO: Handle UTF-8 properly. I still need to use binary mode so that
     // Windows won't add a CRLF line ending when the file is written with LF
     // endings. The text/utf-8 output code would foil it.
@@ -57,10 +60,10 @@ allFiles.forEach((filePath) => {
   } else {
     console.log(lines);
   }
-  if (inPlace) {
+  if (inPlace && !silent) {
     console.timeEnd(`Formatting Time: ${filePath}`);
   }
 });
-if (inPlace) {
+if (inPlace && !silent) {
   console.timeEnd('Total Formatting Time');
 }

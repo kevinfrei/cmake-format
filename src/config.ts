@@ -9,7 +9,7 @@ import {
 } from '@freik/typechk';
 import * as fs from 'fs';
 import * as path from 'path';
-import defaultConfig from './defaults.json';
+import defaultConfig from './defaults.json' with { type: 'json' };
 
 export type CommandConfig = {
   controlKeywords: string[];
@@ -116,7 +116,6 @@ function readConfigFile(): Partial<Configuration> | undefined {
   }
   return;
 }
-
 
 export function loadConfig(): Partial<Configuration> {
   // Load configuration from a file or environment variables
